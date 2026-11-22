@@ -1,172 +1,378 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Meal - NutriTrack{% endblock %}
+{% block title %}Meal Upload & AI Food Recognition - NutriTrack{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>📸 Step 2: Upload Meal & Enter Ingredients</h1>
-    <p>Upload a food photo or type ingredients to let NutriTrack AI detect items, calculate portions, and look up nutrition values.</p>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+        <h1 style="color: var(--primary-dark); font-size: 1.75rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
+            <span>📸</span> Step 2 & 3: Meal Upload & AI Food Recognition
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+            Upload a food photo, snap with your camera, or enter your recipe ingredients to calculate precise calories, macronutrients, and portions.
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-weight: 700; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 20px;">
+            🥗 77+ Foods Seeded
+        </span>
+        <span class="badge" style="background: var(--secondary-light); color: var(--secondary); font-weight: 700; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 20px;">
+            ⚡ Instant AI Analysis
+        </span>
+    </div>
 </div>
 
-<div class="grid-2">
-    <!-- Option A: Upload Food Photo -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">📷 Option A: Upload Food Photo</h2>
-            <span class="badge badge-veg">AI Vision</span>
+<!-- Global Meal Category Selector -->
+<div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="font-weight: 700; color: var(--text-dark); font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🍽️ Select Meal Category:</span>
         </div>
-        <form id="image_upload_form" method="POST" action="{{ url_for('upload_view') }}" enctype="multipart/form-data">
-            <input type="hidden" name="input_type" value="image">
-            
-            <div class="form-group">
-                <label for="meal_image">Select or Drop Meal Image (JPG, PNG, JPEG, WEBP)</label>
-                
-                <!-- Interactive Dropzone -->
-                <div id="dropzone_container" class="dropzone" style="cursor: pointer; position: relative; transition: all 0.25s ease;" onclick="document.getElementById('meal_image').click();">
-                    <div id="dropzone_prompt">
-                        <span class="dropzone-icon" style="font-size: 2.4rem; display: block; margin-bottom: 0.5rem;">🍽️</span>
-                        <p style="font-weight: 600; color: var(--primary-dark); margin-bottom: 0.25rem;">Click to browse or drag and drop meal photo</p>
-                        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Supported formats: JPG, PNG, WEBP, GIF (Up to 16 MB)</p>
+        <div id="meal_category_selector" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="category-pill" data-category="Breakfast" onclick="selectMealCategory('Breakfast')">
+                🍳 Breakfast
+            </button>
+            <button type="button" class="category-pill active" data-category="Lunch" onclick="selectMealCategory('Lunch')">
+                🍛 Lunch
+            </button>
+            <button type="button" class="category-pill" data-category="Dinner" onclick="selectMealCategory('Dinner')">
+                🍲 Dinner
+            </button>
+            <button type="button" class="category-pill" data-category="Snacks" onclick="selectMealCategory('Snacks')">
+                🍿 Snacks
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Two-Column Layout -->
+<div class="grid-2" style="gap: 1.5rem; margin-bottom: 2rem;">
+    
+    <!-- ------------------------------------------------------------------- -->
+    <!-- Option A: Upload Food Photo -->
+    <!-- ------------------------------------------------------------------- -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 2px solid var(--primary-light); padding-bottom: 0.75rem;">
+                <h2 class="card-title" style="font-size: 1.2rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📷</span> Option A: Upload Food Photo
+                </h2>
+                <span class="badge" style="background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 0.78rem;">
+                    AI Vision
+                </span>
+            </div>
+
+            <form id="image_upload_form" method="POST" action="{{ url_for('upload_view') }}" enctype="multipart/form-data">
+                <input type="hidden" name="input_type" value="image">
+                <input type="hidden" id="photo_selected_category" name="meal_type" value="Lunch">
+
+                <!-- Drag-and-Drop Dropzone -->
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Food Photo (JPG, JPEG, PNG, WEBP)
+                    </label>
+
+                    <div id="dropzone_container" class="dropzone" style="border: 2px dashed #94a3b8; border-radius: 12px; padding: 2rem 1.25rem; text-align: center; background: #ffffff; cursor: pointer; transition: all 0.25s ease;" onclick="document.getElementById('meal_image').click();">
+                        
+                        <!-- Initial Prompt State -->
+                        <div id="dropzone_prompt">
+                            <span style="font-size: 2.8rem; display: block; margin-bottom: 0.5rem;">📸</span>
+                            <p style="font-weight: 700; color: var(--primary-dark); font-size: 1rem; margin-bottom: 0.25rem;">
+                                Drag & drop meal photo here or browse files
+                            </p>
+                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                                Max file size: 16 MB &bull; Supports JPG, JPEG, PNG, WEBP
+                            </p>
+                            <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.75rem;">
+                                💡 Tip: You can also press Ctrl+V to paste a copied image!
+                            </span>
+                        </div>
+
+                        <!-- Live Image Preview Container -->
+                        <div id="image_preview_box" style="display: none; text-align: center;">
+                            <img id="image_preview_img" src="" alt="Selected Meal Preview" 
+                                 style="max-height: 220px; max-width: 100%; border-radius: 10px; border: 2px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.1); object-fit: contain;">
+                            
+                            <div id="image_preview_meta" style="margin-top: 0.6rem; font-size: 0.88rem; font-weight: 700; color: var(--primary);"></div>
+                            
+                            <!-- Action Buttons: Change or Clear -->
+                            <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.75rem;">
+                                <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 6px;" onclick="changeImageSelection(event)">
+                                    🔄 Change Photo
+                                </button>
+                                <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; color: #dc2626; border-color: #fca5a5; background: #fff1f2; border-radius: 6px;" onclick="clearImageSelection(event)">
+                                    ❌ Clear / Remove
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Live Image Preview Container -->
-                    <div id="image_preview_box" style="display: none; text-align: center; margin-top: 0.75rem;">
-                        <img id="image_preview_img" src="" alt="Selected Meal Preview" 
-                             style="max-height: 220px; max-width: 100%; border-radius: 8px; border: 2px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain;">
-                        <div id="image_preview_meta" style="margin-top: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--primary);"></div>
-                        
-                        <!-- Action buttons: Change or Clear -->
-                        <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.6rem;">
-                            <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.82rem;" onclick="changeImageSelection(event)">
-                                🔄 Change Photo
-                            </button>
-                            <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; color: #dc2626; border-color: #fca5a5; background: #fff1f2;" onclick="clearImageSelection(event)">
-                                ❌ Clear / Remove
-                            </button>
+                    <!-- Hidden Inputs for File Picker and Camera -->
+                    <input type="file" id="meal_image" name="meal_image" class="form-control" style="display: none;" accept="image/jpeg,image/png,image/webp,image/jpg" onchange="handleFileSelected(this)">
+                    <input type="file" id="camera_image" class="form-control" style="display: none;" accept="image/*" capture="environment" onchange="handleCameraCaptured(this)">
+
+                    <!-- Action Buttons: Browse and Camera -->
+                    <div style="display: flex; gap: 0.6rem; margin-top: 0.75rem;">
+                        <button type="button" class="btn btn-outline" style="flex: 1; padding: 0.5rem; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-weight: 600;" onclick="document.getElementById('meal_image').click();">
+                            📁 Browse Files
+                        </button>
+                        <button type="button" class="btn btn-outline" style="flex: 1; padding: 0.5rem; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-weight: 600;" onclick="document.getElementById('camera_image').click();">
+                            📸 Snap Camera
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Optional Dish Name Input -->
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="photo_dish_name" style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem;">
+                        <span>Dish Name <span style="font-weight: normal; color: var(--text-muted);">(Optional)</span></span>
+                        <span style="font-size: 0.78rem; color: var(--primary); font-weight: 600;">✨ Improves AI Accuracy</span>
+                    </label>
+                    <input type="text" id="photo_dish_name" name="food_hint" class="form-control" placeholder="e.g. Chicken Biryani, Paneer Dosa, Dal Tadka..." style="padding: 0.65rem 0.85rem;">
+                    
+                    <!-- 10 Popular Food Suggestion Chips -->
+                    <div style="margin-top: 0.75rem;">
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+                            Popular Food Suggestions:
+                        </span>
+                        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                            <span class="chip" onclick="setPhotoChip('Chicken Biryani')">🍗 Chicken Biryani</span>
+                            <span class="chip" onclick="setPhotoChip('Egg Rice')">🍳 Egg Rice</span>
+                            <span class="chip" onclick="setPhotoChip('Paneer Rice')">🧀 Paneer Rice</span>
+                            <span class="chip" onclick="setPhotoChip('Rice and Dal')">🍛 Rice and Dal</span>
+                            <span class="chip" onclick="setPhotoChip('Masala Dosa')">🥞 Masala Dosa</span>
+                            <span class="chip" onclick="setPhotoChip('Idli and Sambar')">🥟 Idli and Sambar</span>
+                            <span class="chip" onclick="setPhotoChip('Chapati and Curry')">🫓 Chapati and Curry</span>
+                            <span class="chip" onclick="setPhotoChip('Veg Fried Rice')">🍚 Veg Fried Rice</span>
+                            <span class="chip" onclick="setPhotoChip('Chicken Fried Rice')">🍗 Chicken Fried Rice</span>
+                            <span class="chip" onclick="setPhotoChip('Pizza')">🍕 Pizza</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Hidden file inputs for File Picker & Mobile Camera -->
-                <input type="file" id="meal_image" name="meal_image" class="form-control" style="display: none;" accept="image/*" onchange="handleFileSelected(this)">
-                <input type="file" id="camera_image" class="form-control" style="display: none;" accept="image/*" capture="environment" onchange="handleCameraCaptured(this)">
-                
-                <div style="display: flex; gap: 0.5rem; margin-top: 0.6rem;">
-                    <button type="button" class="btn btn-outline" style="flex: 1; padding: 0.4rem; font-size: 0.85rem;" onclick="document.getElementById('meal_image').click();">
-                        📁 Choose File
-                    </button>
-                    <button type="button" class="btn btn-outline" style="flex: 1; padding: 0.4rem; font-size: 0.85rem;" onclick="document.getElementById('camera_image').click();">
-                        📸 Snap Camera
-                    </button>
-                </div>
-                <p style="font-size: 0.78rem; color: var(--text-muted); text-align: center; margin-top: 0.4rem;">
-                    💡 Tip: You can also copy any screenshot or photo and press <strong>Ctrl+V</strong> to paste it directly!
-                </p>
-            </div>
-
-            <!-- Optional Dish Name / Food Hint for accurate AI recognition -->
-            <div class="form-group" style="margin-top: 0.75rem;">
-                <label for="food_hint" style="display: flex; justify-content: space-between;">
-                    <span>Dish Name or Hint <span style="font-weight: normal; color: var(--text-muted);">(Optional)</span></span>
-                    <span style="font-size: 0.78rem; color: var(--primary);">Boosts recognition accuracy</span>
-                </label>
-                <input type="text" id="food_hint" name="food_hint" class="form-control" placeholder="e.g. Chicken Biryani, 2 Rotis with Dal, Paneer Dosa...">
-                
-                <!-- Quick meal suggestion chips -->
-                <div style="margin-top: 0.5rem;">
-                    <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Popular Dishes:</span>
-                    <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.35rem;">
-                        <span class="badge" style="cursor: pointer; background: #e0f2fe; color: #0284c7;" onclick="setPhotoHint('Chicken Biryani')">🍗 Chicken Biryani</span>
-                        <span class="badge" style="cursor: pointer; background: #fef3c7; color: #b45309;" onclick="setPhotoHint('Paneer Butter Masala, 2 Rotis')">🥘 Paneer & Roti</span>
-                        <span class="badge" style="cursor: pointer; background: #dcfce7; color: #15803d;" onclick="setPhotoHint('Cooked White Rice, Dal Curry, Salad')">🥗 Rice & Dal</span>
-                        <span class="badge" style="cursor: pointer; background: #ffedd5; color: #c2410c;" onclick="setPhotoHint('2 Masala Dosas')">🥞 Masala Dosa</span>
-                        <span class="badge" style="cursor: pointer; background: #f3e8ff; color: #7e22ce;" onclick="setPhotoHint('2 Boiled Eggs, 2 Slices Toast')">🍳 Eggs & Toast</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="photo_meal_type">Meal Category</label>
-                <select id="photo_meal_type" name="meal_type" class="form-control">
-                    <option value="Breakfast">Breakfast</option>
-                    <option value="Lunch" selected>Lunch</option>
-                    <option value="Dinner">Dinner</option>
-                    <option value="Snack">Snack</option>
-                </select>
-            </div>
-
-            <button type="submit" id="submit_photo_btn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
-                ⚡ Run AI Food Recognition
-            </button>
-        </form>
+                <button type="submit" id="submit_photo_btn" class="btn btn-primary" style="width: 100%; padding: 0.8rem; font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 10px rgba(40, 122, 69, 0.25);">
+                    ⚡ Analyze Photo & Estimate Nutrition
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- Option B: Enter Ingredients / Text Description / Voice Input -->
-    <div class="card">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 class="card-title">✍️ Option B: Enter Meal Ingredients</h2>
-            <button type="button" id="voice_input_btn" class="btn btn-outline" style="padding: 0.3rem 0.65rem; font-size: 0.82rem;" onclick="startVoiceRecognition()">
-                🎙️ Speak Meal
-            </button>
-        </div>
-        <form method="POST" action="{{ url_for('upload_view') }}">
-            <input type="hidden" name="input_type" value="text">
-
-            <div class="form-group">
-                <label for="ingredients_text">Enter ingredients, dish description, or speak</label>
-                <textarea id="ingredients_text" name="ingredients_text" class="form-control" placeholder="e.g. 2 boiled eggs, 1 slice whole wheat bread, 1 medium apple" required style="min-height: 95px;"></textarea>
-                <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem;">
-                    💡 Separate ingredients with commas or "and". Quantities like "150g rice" or "2 eggs" are automatically understood.
-                </p>
+    <!-- ------------------------------------------------------------------- -->
+    <!-- Option B: Enter Meal Ingredients -->
+    <!-- ------------------------------------------------------------------- -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 2px solid var(--secondary-light); padding-bottom: 0.75rem;">
+                <h2 class="card-title" style="font-size: 1.2rem; color: #c2410c; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>✍️</span> Option B: Enter Meal Ingredients
+                </h2>
+                <button type="button" id="voice_input_btn" class="btn btn-outline" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; border-radius: 6px;" onclick="startVoiceRecognition()">
+                    🎙️ Speak Meal
+                </button>
             </div>
 
-            <div class="form-group">
-                <label for="text_meal_type">Meal Category</label>
-                <select id="text_meal_type" name="meal_type" class="form-control">
-                    <option value="Breakfast">Breakfast</option>
-                    <option value="Lunch" selected>Lunch</option>
-                    <option value="Dinner">Dinner</option>
-                    <option value="Snack">Snack</option>
-                </select>
+            <!-- Dish Name Input -->
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="recipe_dish_name" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem; display: block;">
+                    Dish Name <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="text" id="recipe_dish_name" class="form-control" placeholder="e.g. Chicken Biryani, Paneer Curry, Oats Bowl..." required style="padding: 0.65rem 0.85rem;">
             </div>
 
-            <!-- Quick sample buttons -->
-            <div style="margin-bottom: 1.25rem;">
-                <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">Quick Examples:</span>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;">
-                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.82rem;" onclick="setSample('2 boiled eggs, 1 slice whole wheat bread, 1 apple', 'Breakfast')">
-                        🍳 Egg Breakfast
-                    </button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.82rem;" onclick="setSample('1 bowl cooked brown rice, 1 bowl dal / yellow lentil curry, 1 bowl mixed green salad', 'Lunch')">
-                        🥗 Dal & Rice Lunch
-                    </button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.82rem;" onclick="setSample('100g grilled chicken breast, 1 cup steamed broccoli, 1 bowl cooked white rice', 'Dinner')">
-                        🍗 Chicken & Rice Dinner
-                    </button>
+            <!-- Cooking Method & Portion Size Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <label for="recipe_cooking_method" style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem; display: block;">
+                        Cooking Method:
+                    </label>
+                    <select id="recipe_cooking_method" class="form-control" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;">
+                        <option value="pan_cooked">🍳 Pan Cooked / Sautéed</option>
+                        <option value="boiled_steamed">♨️ Boiled / Steamed</option>
+                        <option value="grilled_baked">🥩 Grilled / Baked</option>
+                        <option value="deep_fried">🍟 Deep Fried</option>
+                        <option value="raw_fresh">🥗 Raw / Fresh</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="recipe_portion_size" style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem; display: block;">
+                        Portion Size:
+                    </label>
+                    <select id="recipe_portion_size" class="form-control" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;">
+                        <option value="0.75">Small (0.75x)</option>
+                        <option value="1.0" selected>Regular / Medium (1.0x)</option>
+                        <option value="1.5">Large (1.5x)</option>
+                        <option value="2.0">Extra Large (2.0x)</option>
+                    </select>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-secondary" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
-                🔍 Analyze Ingredients & Estimate Portions
+            <!-- Dish Description / Notes -->
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="recipe_notes" style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem; display: block;">
+                    Dish Description / Notes <span style="font-weight: normal; color: var(--text-muted);">(Optional)</span>
+                </label>
+                <textarea id="recipe_notes" class="form-control" placeholder="e.g. Cooked basmati rice with marinated chicken breast, onions, tomatoes and olive oil" rows="2" style="font-size: 0.85rem; padding: 0.5rem 0.75rem; resize: vertical;"></textarea>
+            </div>
+
+            <!-- Dynamic Ingredients Builder -->
+            <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-dark);">
+                        🥘 Ingredients & Quantities:
+                    </span>
+                    <button type="button" class="btn btn-outline" style="padding: 0.3rem 0.65rem; font-size: 0.8rem; border-radius: 6px; font-weight: 600;" onclick="addIngredientRow()">
+                        ➕ Add Ingredient
+                    </button>
+                </div>
+
+                <div id="ingredients_container" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <!-- Ingredient rows will be injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Quick Clickable Examples -->
+            <div style="margin-bottom: 1.25rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+                    ⚡ Quick Examples (1-Click Load):
+                </span>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                    <button type="button" class="chip-example" onclick="loadExample('egg_breakfast')">🍳 Egg Breakfast</button>
+                    <button type="button" class="chip-example" onclick="loadExample('paneer_rice')">🧀 Paneer and Rice</button>
+                    <button type="button" class="chip-example" onclick="loadExample('dal_rice')">🥗 Dal and Rice Lunch</button>
+                    <button type="button" class="chip-example" onclick="loadExample('chicken_rice')">🍗 Chicken and Rice Dinner</button>
+                    <button type="button" class="chip-example" onclick="loadExample('fruit_salad')">🍎 Fruit Salad</button>
+                    <button type="button" class="chip-example" onclick="loadExample('veg_salad')">🥦 Vegetable Salad</button>
+                </div>
+            </div>
+
+            <button type="button" id="analyze_ingredients_btn" class="btn btn-secondary" style="width: 100%; padding: 0.8rem; font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 10px rgba(242, 140, 40, 0.25);" onclick="analyzeRecipeIngredients()">
+                ⚡ Analyze Ingredients & Estimate Nutrition
             </button>
-        </form>
+        </div>
     </div>
 </div>
 
-<!-- Option C: Quick Search & Log from Nutrition Database -->
-<div class="card" style="margin-top: 1.5rem;">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+<!-- ----------------------------------------------------------------------- -->
+<!-- Section 5: Real-time AI Nutrition Analysis Results (Smooth Reveal) -->
+<!-- ----------------------------------------------------------------------- -->
+<div id="nutrition_analysis_results" class="card" style="display: none; margin-bottom: 2rem; border-top: 4px solid var(--primary); box-shadow: 0 6px 20px rgba(0,0,0,0.08); transition: all 0.3s ease;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.25rem;">
         <div>
-            <h2 class="card-title">🔍 Option C: Quick Search & 1-Click Food Logger (77+ Items)</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Instant lookup without taking photos or typing descriptions.</p>
+            <h2 id="result_dish_title" class="card-title" style="font-size: 1.35rem; color: var(--primary-dark); font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+                🎯 AI Nutrition Analysis
+            </h2>
+            <p id="result_dish_subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+                Portion size & ingredients contribution breakdown
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span id="result_category_badge" class="badge badge-all" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">Lunch</span>
+            <span id="result_method_badge" class="badge" style="background: var(--primary-light); color: var(--primary); font-size: 0.82rem; padding: 0.35rem 0.75rem;">Pan Cooked</span>
+        </div>
+    </div>
+
+    <!-- 5 Key Metric Cards -->
+    <div class="grid-4" style="margin-bottom: 1.5rem;">
+        <!-- Calories -->
+        <div class="metric-box" style="border-top: 3px solid var(--primary);">
+            <span class="metric-label">Total Calories</span>
+            <div id="result_calories" class="metric-value" style="color: var(--primary);">0</div>
+            <span class="metric-sub">kcal per serving</span>
+        </div>
+
+        <!-- Protein -->
+        <div class="metric-box" style="border-top: 3px solid var(--secondary);">
+            <span class="metric-label">Protein</span>
+            <div id="result_protein" class="metric-value" style="color: var(--secondary);">0g</div>
+            <span id="result_protein_pct" class="metric-sub">0% of calories</span>
+        </div>
+
+        <!-- Carbohydrates -->
+        <div class="metric-box" style="border-top: 3px solid #3b82f6;">
+            <span class="metric-label">Carbohydrates</span>
+            <div id="result_carbs" class="metric-value" style="color: #3b82f6;">0g</div>
+            <span id="result_carb_pct" class="metric-sub">0% of calories</span>
+        </div>
+
+        <!-- Fats & Fiber -->
+        <div class="metric-box" style="border-top: 3px solid #8b5cf6;">
+            <span class="metric-label">Total Fat</span>
+            <div id="result_fat" class="metric-value" style="color: #8b5cf6;">0g</div>
+            <span id="result_fiber" class="metric-sub">Fiber: 0g</span>
+        </div>
+    </div>
+
+    <!-- Visual Macro Ratio Progress Bar -->
+    <div style="margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem;">
+            <span>Macronutrient Calorie Distribution:</span>
+            <span id="macro_ratio_legend" style="color: var(--text-muted); font-size: 0.8rem;">
+                🥩 Protein &bull; 🍞 Carbs &bull; 🥑 Fats
+            </span>
+        </div>
+        <div style="display: flex; height: 16px; border-radius: 8px; overflow: hidden; background: #e2e8f0; width: 100%;">
+            <div id="bar_protein" style="background: var(--secondary); width: 30%; transition: width 0.4s ease;" title="Protein %"></div>
+            <div id="bar_carbs" style="background: #3b82f6; width: 50%; transition: width 0.4s ease;" title="Carbohydrates %"></div>
+            <div id="bar_fat" style="background: #8b5cf6; width: 20%; transition: width 0.4s ease;" title="Fat %"></div>
+        </div>
+    </div>
+
+    <!-- Detailed Ingredients Breakdown Table -->
+    <div style="margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>📋</span> Individual Ingredient Contributions:
+        </h3>
+        <div style="overflow-x: auto;">
+            <table class="data-table" style="width: 100%; font-size: 0.88rem;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Ingredient</th>
+                        <th>Quantity / Weight</th>
+                        <th>Calories</th>
+                        <th>Protein</th>
+                        <th>Carbs</th>
+                        <th>Fat</th>
+                        <th>Fiber</th>
+                    </tr>
+                </thead>
+                <tbody id="result_ingredients_tbody">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Save Meal Action Button -->
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem;">
+        <button type="button" class="btn btn-outline" onclick="scrollToIngredients()">
+            ✏️ Adjust Recipe
+        </button>
+        <button type="button" id="save_analyzed_meal_btn" class="btn btn-primary" style="padding: 0.75rem 1.75rem; font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;" onclick="saveAnalyzedMealToDiary()">
+            💾 Save Meal to Diary
+        </button>
+    </div>
+</div>
+
+<!-- ----------------------------------------------------------------------- -->
+<!-- Option C: Quick Search & 1-Click Food Logger (77+ Items) -->
+<!-- ----------------------------------------------------------------------- -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h2 class="card-title" style="font-size: 1.15rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔍</span> Option C: Quick Search & 1-Click Food Logger (77+ Items)
+            </h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">
+                Instantly search our standard nutrition database and log items without photos or recipes.
+            </p>
         </div>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
             <label for="quick_db_meal_type" style="font-size: 0.85rem; font-weight: 600; margin: 0;">Log As:</label>
-            <select id="quick_db_meal_type" class="form-control" style="width: auto; padding: 0.3rem 0.6rem; font-size: 0.85rem;">
+            <select id="quick_db_meal_type" class="form-control" style="width: auto; padding: 0.35rem 0.65rem; font-size: 0.85rem;">
                 <option value="Breakfast">Breakfast</option>
                 <option value="Lunch" selected>Lunch</option>
                 <option value="Dinner">Dinner</option>
-                <option value="Snack">Snack</option>
+                <option value="Snacks">Snacks</option>
             </select>
         </div>
     </div>
@@ -182,7 +388,201 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+/* Modern Upload Page Components */
+.category-pill {
+    padding: 0.45rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.category-pill:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.category-pill.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(40, 122, 69, 0.3);
+}
+
+.chip {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 16px;
+    background: #f1f5f9;
+    color: #334155;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s ease;
+}
+
+.chip:hover {
+    background: #e0f2fe;
+    color: #0369a1;
+    border-color: #bae6fd;
+    transform: translateY(-1px);
+}
+
+.chip-example {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 8px;
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.chip-example:hover {
+    background: #ffedd5;
+    border-color: #fb923c;
+    transform: translateY(-1px);
+}
+
+.ingredient-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+@media (max-width: 600px) {
+    .ingredient-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>
+
 <script>
+// State Management
+let currentSelectedCategory = 'Lunch';
+let lastAnalyzedData = null;
+
+// Preset Quick Examples
+const QUICK_EXAMPLES = {
+    egg_breakfast: {
+        dish_name: "Egg Breakfast with Whole Wheat Toast",
+        category: "Breakfast",
+        cooking_method: "boiled_steamed",
+        portion_size: "1.0",
+        notes: "2 whole boiled eggs served with 1 slice of whole wheat toast and fresh butter",
+        ingredients: [
+            { name: "Egg", quantity: 2, unit: "pieces" },
+            { name: "Bread", quantity: 1, unit: "slice" },
+            { name: "Butter", quantity: 1, unit: "tsp" }
+        ]
+    },
+    paneer_rice: {
+        dish_name: "Paneer Curry with Brown Rice",
+        category: "Lunch",
+        cooking_method: "pan_cooked",
+        portion_size: "1.0",
+        notes: "Sautéed fresh cottage cheese cubes cooked in light onion-tomato gravy served with brown rice",
+        ingredients: [
+            { name: "Brown Rice", quantity: 150, unit: "g" },
+            { name: "Paneer", quantity: 100, unit: "g" },
+            { name: "Onion", quantity: 40, unit: "g" },
+            { name: "Tomato", quantity: 40, unit: "g" },
+            { name: "Oil", quantity: 1, unit: "tbsp" }
+        ]
+    },
+    dal_rice: {
+        dish_name: "Dal Tadka with Cooked White Rice & Salad",
+        category: "Lunch",
+        cooking_method: "boiled_steamed",
+        portion_size: "1.0",
+        notes: "Traditional yellow lentil curry tempered with cumin, served with steamed basmati rice",
+        ingredients: [
+            { name: "Rice", quantity: 150, unit: "g" },
+            { name: "Dal", quantity: 150, unit: "g" },
+            { name: "Onion", quantity: 30, unit: "g" },
+            { name: "Tomato", quantity: 30, unit: "g" },
+            { name: "Ghee", quantity: 1, unit: "tsp" }
+        ]
+    },
+    chicken_rice: {
+        dish_name: "Chicken Biryani with Raita",
+        category: "Dinner",
+        cooking_method: "pan_cooked",
+        portion_size: "1.0",
+        notes: "Aromatic basmati rice cooked with marinated tender chicken breast, onions, tomatoes and whole spices",
+        ingredients: [
+            { name: "Rice", quantity: 150, unit: "g" },
+            { name: "Chicken", quantity: 120, unit: "g" },
+            { name: "Onion", quantity: 50, unit: "g" },
+            { name: "Tomato", quantity: 40, unit: "g" },
+            { name: "Oil", quantity: 1, unit: "tbsp" },
+            { name: "Spices", quantity: 1, unit: "tsp" }
+        ]
+    },
+    fruit_salad: {
+        dish_name: "Fresh Fruit Salad Bowl",
+        category: "Snacks",
+        cooking_method: "raw_fresh",
+        portion_size: "1.0",
+        notes: "Assorted freshly sliced seasonal fruits rich in dietary fiber, vitamins and antioxidants",
+        ingredients: [
+            { name: "Apple", quantity: 100, unit: "g" },
+            { name: "Banana", quantity: 100, unit: "g" },
+            { name: "Orange", quantity: 100, unit: "g" }
+        ]
+    },
+    veg_salad: {
+        dish_name: "Mediterranean Vegetable & Greens Salad",
+        category: "Dinner",
+        cooking_method: "raw_fresh",
+        portion_size: "1.0",
+        notes: "Fresh raw broccoli, spinach greens, tomatoes and onions tossed with extra virgin olive oil",
+        ingredients: [
+            { name: "Broccoli", quantity: 100, unit: "g" },
+            { name: "Spinach", quantity: 50, unit: "g" },
+            { name: "Tomato", quantity: 50, unit: "g" },
+            { name: "Onion", quantity: 30, unit: "g" },
+            { name: "Oil", quantity: 1, unit: "tbsp" }
+        ]
+    }
+};
+
+// -------------------------------------------------------------------------
+// Category Selection Logic
+// -------------------------------------------------------------------------
+function selectMealCategory(category) {
+    currentSelectedCategory = category;
+    
+    // Update pills
+    document.querySelectorAll('.category-pill').forEach(btn => {
+        if (btn.dataset.category === category) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // Update hidden form inputs
+    const photoCat = document.getElementById('photo_selected_category');
+    if (photoCat) photoCat.value = category;
+
+    const quickCat = document.getElementById('quick_db_meal_type');
+    if (quickCat) quickCat.value = category;
+}
+
+// -------------------------------------------------------------------------
+// Option A: Image Upload & Preview Handling
+// -------------------------------------------------------------------------
 const dropzone = document.getElementById('dropzone_container');
 const fileInput = document.getElementById('meal_image');
 const previewBox = document.getElementById('image_preview_box');
@@ -190,9 +590,8 @@ const previewImg = document.getElementById('image_preview_img');
 const previewMeta = document.getElementById('image_preview_meta');
 const promptBox = document.getElementById('dropzone_prompt');
 const photoForm = document.getElementById('image_upload_form');
-const submitBtn = document.getElementById('submit_photo_btn');
+const submitPhotoBtn = document.getElementById('submit_photo_btn');
 
-// Drag and drop event handling
 if (dropzone) {
     ['dragenter', 'dragover'].forEach(eventName => {
         dropzone.addEventListener(eventName, (e) => {
@@ -208,8 +607,8 @@ if (dropzone) {
         dropzone.addEventListener(eventName, (e) => {
             e.preventDefault();
             e.stopPropagation();
-            dropzone.style.borderColor = 'var(--border)';
-            dropzone.style.background = 'white';
+            dropzone.style.borderColor = '#94a3b8';
+            dropzone.style.background = '#ffffff';
             dropzone.style.transform = 'scale(1)';
         });
     });
@@ -223,7 +622,7 @@ if (dropzone) {
     });
 }
 
-// Clipboard Paste (Ctrl+V) support
+// Clipboard Paste (Ctrl+V)
 window.addEventListener('paste', function(e) {
     const items = (e.clipboardData || window.clipboardData).items;
     if (!items) return;
@@ -255,10 +654,9 @@ function handleCameraCaptured(input) {
 
 function displayImagePreview(file) {
     if (!file || !file.type.startsWith('image/')) {
-        alert('Please choose a valid image file.');
+        alert('Please choose a valid image file (JPG, PNG, WEBP).');
         return;
     }
-
     const reader = new FileReader();
     reader.onload = function(e) {
         previewImg.src = e.target.result;
@@ -270,7 +668,6 @@ function displayImagePreview(file) {
     reader.readAsDataURL(file);
 }
 
-// Dedicated Clear Function: Resets input and returns dropzone to prompt
 function clearImageSelection(event) {
     if (event) {
         event.preventDefault();
@@ -280,14 +677,13 @@ function clearImageSelection(event) {
     previewImg.src = '';
     previewBox.style.display = 'none';
     promptBox.style.display = 'block';
-    if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '⚡ Run AI Food Recognition';
-        submitBtn.style.opacity = '1';
+    if (submitPhotoBtn) {
+        submitPhotoBtn.disabled = false;
+        submitPhotoBtn.innerHTML = '⚡ Analyze Photo & Estimate Nutrition';
+        submitPhotoBtn.style.opacity = '1';
     }
 }
 
-// Dedicated Change Photo Function
 function changeImageSelection(event) {
     if (event) {
         event.preventDefault();
@@ -296,29 +692,250 @@ function changeImageSelection(event) {
     fileInput.click();
 }
 
-function setPhotoHint(hintText) {
-    document.getElementById('food_hint').value = hintText;
+function setPhotoChip(dishName) {
+    document.getElementById('photo_dish_name').value = dishName;
 }
 
 if (photoForm) {
     photoForm.addEventListener('submit', function(e) {
         if (!fileInput.files || fileInput.files.length === 0) {
             e.preventDefault();
-            alert('Please select or drag a meal photo first.');
+            alert('Please select, drag & drop, or capture a meal photo first.');
             return;
         }
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '🤖 Analyzing meal photo with AI...';
-        submitBtn.style.opacity = '0.85';
+        submitPhotoBtn.disabled = true;
+        submitPhotoBtn.innerHTML = '🤖 Analyzing meal photo with AI...';
+        submitPhotoBtn.style.opacity = '0.85';
     });
 }
 
-function setSample(text, mealType) {
-    document.getElementById('ingredients_text').value = text;
-    document.getElementById('text_meal_type').value = mealType;
+// -------------------------------------------------------------------------
+// Option B: Ingredients Builder & Quick Examples
+// -------------------------------------------------------------------------
+function addIngredientRow(name = '', quantity = 100, unit = 'g') {
+    const container = document.getElementById('ingredients_container');
+    const rowId = 'ing_row_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+    const div = document.createElement('div');
+    div.id = rowId;
+    div.className = 'ingredient-row';
+    div.innerHTML = `
+        <input type="text" class="form-control ing-name" placeholder="Ingredient (e.g. Rice, Chicken, Onion)" value="${name}" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;" required>
+        <input type="number" step="0.5" min="0.1" max="5000" class="form-control ing-qty" placeholder="Qty" value="${quantity}" style="padding: 0.45rem 0.65rem; font-size: 0.85rem; text-align: center;" required>
+        <select class="form-control ing-unit" style="padding: 0.45rem 0.5rem; font-size: 0.85rem;">
+            <option value="g" ${unit === 'g' ? 'selected' : ''}>g (grams)</option>
+            <option value="tbsp" ${unit === 'tbsp' ? 'selected' : ''}>tbsp</option>
+            <option value="tsp" ${unit === 'tsp' ? 'selected' : ''}>tsp</option>
+            <option value="cups" ${unit === 'cups' ? 'selected' : ''}>cup(s)</option>
+            <option value="bowls" ${unit === 'bowls' ? 'selected' : ''}>bowl(s)</option>
+            <option value="pieces" ${unit === 'pieces' || unit === 'piece' ? 'selected' : ''}>piece(s)</option>
+            <option value="slice" ${unit === 'slice' ? 'selected' : ''}>slice(s)</option>
+            <option value="servings" ${unit === 'servings' ? 'selected' : ''}>serving</option>
+        </select>
+        <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.6rem; color: #ef4444; border-color: #fca5a5;" onclick="removeIngredientRow('${rowId}')" title="Remove ingredient">
+            🗑️
+        </button>
+    `;
+    container.appendChild(div);
 }
 
-// Voice Recognition Function (Option B)
+function removeIngredientRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        const container = document.getElementById('ingredients_container');
+        if (container.children.length > 1) {
+            row.remove();
+        } else {
+            alert('A recipe must have at least one ingredient.');
+        }
+    }
+}
+
+function loadExample(key) {
+    const ex = QUICK_EXAMPLES[key];
+    if (!ex) return;
+
+    document.getElementById('recipe_dish_name').value = ex.dish_name;
+    document.getElementById('recipe_notes').value = ex.notes;
+    document.getElementById('recipe_cooking_method').value = ex.cooking_method;
+    document.getElementById('recipe_portion_size').value = ex.portion_size;
+    selectMealCategory(ex.category);
+
+    // Clear and rebuild ingredient rows
+    const container = document.getElementById('ingredients_container');
+    container.innerHTML = '';
+    ex.ingredients.forEach(ing => {
+        addIngredientRow(ing.name, ing.quantity, ing.unit);
+    });
+
+    // Automatically trigger recipe analysis
+    analyzeRecipeIngredients();
+}
+
+// -------------------------------------------------------------------------
+// Section 5: AI Nutrition Analysis Execution
+// -------------------------------------------------------------------------
+function analyzeRecipeIngredients() {
+    const dishName = document.getElementById('recipe_dish_name').value.trim();
+    if (!dishName) {
+        alert('Please enter a Dish Name (e.g. Chicken Biryani, Paneer Curry).');
+        document.getElementById('recipe_dish_name').focus();
+        return;
+    }
+
+    const rows = document.querySelectorAll('#ingredients_container .ingredient-row');
+    const ingredients = [];
+
+    rows.forEach(r => {
+        const name = r.querySelector('.ing-name').value.trim();
+        const qty = parseFloat(r.querySelector('.ing-qty').value) || 1.0;
+        const unit = r.querySelector('.ing-unit').value;
+        if (name) {
+            ingredients.push({ name, quantity: qty, unit });
+        }
+    });
+
+    if (ingredients.length === 0) {
+        alert('Please add at least one ingredient to analyze.');
+        return;
+    }
+
+    const cookingMethod = document.getElementById('recipe_cooking_method').value;
+    const portionMultiplier = parseFloat(document.getElementById('recipe_portion_size').value) || 1.0;
+    const analyzeBtn = document.getElementById('analyze_ingredients_btn');
+
+    analyzeBtn.disabled = true;
+    analyzeBtn.innerHTML = '🤖 Calculating nutrition breakdown...';
+
+    fetch('/api/analyze-ingredients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            dish_name: dishName,
+            cooking_method: cookingMethod,
+            portion_multiplier: portionMultiplier,
+            ingredients: ingredients
+        })
+    })
+    .then(res => res.json())
+    .then(resp => {
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '⚡ Analyze Ingredients & Estimate Nutrition';
+
+        if (resp.success && resp.data) {
+            displayNutritionResults(resp.data);
+        } else {
+            alert('Failed to analyze ingredients: ' + (resp.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '⚡ Analyze Ingredients & Estimate Nutrition';
+        console.error(err);
+        alert('An error occurred during nutrition analysis.');
+    });
+}
+
+function displayNutritionResults(data) {
+    lastAnalyzedData = data;
+    const resultsCard = document.getElementById('nutrition_analysis_results');
+
+    // Populate Headers
+    document.getElementById('result_dish_title').innerHTML = `🎯 Nutrition Breakdown: <span>${data.dish_name}</span>`;
+    document.getElementById('result_dish_subtitle').innerText = `${data.cooking_note} &bull; Total weight: ~${data.total_weight_g}g`;
+    document.getElementById('result_category_badge').innerText = currentSelectedCategory;
+    document.getElementById('result_method_badge').innerText = data.cooking_method.replace('_', ' ').toUpperCase();
+
+    // Populate Key Metrics
+    document.getElementById('result_calories').innerText = Math.round(data.total_calories);
+    document.getElementById('result_protein').innerText = data.total_protein + 'g';
+    document.getElementById('result_carbs').innerText = data.total_carbs + 'g';
+    document.getElementById('result_fat').innerText = data.total_fat + 'g';
+    document.getElementById('result_fiber').innerText = 'Fiber: ' + data.total_fiber + 'g';
+
+    // Calorie % tags
+    document.getElementById('result_protein_pct').innerText = data.macro_percentages.protein + '% of calories';
+    document.getElementById('result_carb_pct').innerText = data.macro_percentages.carbs + '% of calories';
+
+    // Visual Distribution Bar
+    document.getElementById('bar_protein').style.width = Math.max(5, data.macro_percentages.protein) + '%';
+    document.getElementById('bar_carbs').style.width = Math.max(5, data.macro_percentages.carbs) + '%';
+    document.getElementById('bar_fat').style.width = Math.max(5, data.macro_percentages.fat) + '%';
+
+    // Populate Breakdown Table
+    const tbody = document.getElementById('result_ingredients_tbody');
+    tbody.innerHTML = data.breakdown.map(ing => `
+        <tr>
+            <td style="text-align: left; font-weight: 600; color: var(--primary-dark);">
+                ${ing.name}
+            </td>
+            <td>${ing.quantity} ${ing.unit} (~${ing.weight_g}g)</td>
+            <td style="font-weight: 700; color: var(--primary);">${ing.calories} kcal</td>
+            <td style="color: var(--secondary);">${ing.protein}g</td>
+            <td style="color: #3b82f6;">${ing.carbs}g</td>
+            <td style="color: #8b5cf6;">${ing.fat}g</td>
+            <td style="color: var(--text-muted);">${ing.fiber}g</td>
+        </tr>
+    `).join('');
+
+    resultsCard.style.display = 'block';
+    resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scrollToIngredients() {
+    document.getElementById('recipe_dish_name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// -------------------------------------------------------------------------
+// Section 7: Save Analyzed Meal to SQLite Diary
+// -------------------------------------------------------------------------
+function saveAnalyzedMealToDiary() {
+    if (!lastAnalyzedData) {
+        alert('Please analyze ingredients first before saving.');
+        return;
+    }
+
+    const saveBtn = document.getElementById('save_analyzed_meal_btn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '💾 Saving to Diary...';
+
+    const payload = {
+        dish_name: lastAnalyzedData.dish_name,
+        meal_type: currentSelectedCategory,
+        meal_date: new Date().toISOString().split('T')[0],
+        calories: lastAnalyzedData.total_calories,
+        protein: lastAnalyzedData.total_protein,
+        carbs: lastAnalyzedData.total_carbs,
+        fat: lastAnalyzedData.total_fat,
+        serving_description: `1 portion (${lastAnalyzedData.total_weight_g}g)`
+    };
+
+    fetch('/api/save-analyzed-meal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(resp => {
+        if (resp.success) {
+            window.location.href = resp.redirect_url || '/summary';
+        } else {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '💾 Save Meal to Diary';
+            alert('Failed to save meal: ' + (resp.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '💾 Save Meal to Diary';
+        console.error(err);
+        alert('An error occurred while saving the meal.');
+    });
+}
+
+// -------------------------------------------------------------------------
+// Option B: Voice Speech-to-Meal Recognition
+// -------------------------------------------------------------------------
 function startVoiceRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -330,16 +947,16 @@ function startVoiceRecognition() {
     recognition.interimResults = false;
     const voiceBtn = document.getElementById('voice_input_btn');
     if (voiceBtn) {
-        voiceBtn.innerHTML = '🔴 Listening... speak meal';
+        voiceBtn.innerHTML = '🔴 Listening...';
         voiceBtn.style.color = '#dc2626';
     }
     recognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
-        const textarea = document.getElementById('ingredients_text');
-        if (textarea.value) {
-            textarea.value += ', ' + transcript;
+        const notes = document.getElementById('recipe_notes');
+        if (notes.value) {
+            notes.value += ', ' + transcript;
         } else {
-            textarea.value = transcript;
+            notes.value = transcript;
         }
         if (voiceBtn) {
             voiceBtn.innerHTML = '🎙️ Speak Meal';
@@ -361,7 +978,9 @@ function startVoiceRecognition() {
     recognition.start();
 }
 
-// Option C: Database Search & Quick Log
+// -------------------------------------------------------------------------
+// Option C: Database Search & Quick 1-Click Log
+// -------------------------------------------------------------------------
 let searchDebounce = null;
 function searchDatabaseFoods(query) {
     clearTimeout(searchDebounce);
@@ -419,8 +1038,14 @@ function renderFoodCards(foods) {
     `).join('');
 }
 
-// Initial populate of Option C
+// Initialize on Page Load
 document.addEventListener('DOMContentLoaded', function() {
+    // Add 3 initial ingredient rows for Option B
+    addIngredientRow('Rice', 150, 'g');
+    addIngredientRow('Chicken', 120, 'g');
+    addIngredientRow('Oil', 1, 'tbsp');
+    
+    // Load initial popular foods for Option C
     loadPopularFoods();
 });
 </script>

@@ -54,6 +54,45 @@ FOOD_SYNONYMS = {
     "whey": "Whey Protein Shake",
 }
 
+# Culinary nutritional baseline per 100g for recipe & ingredient analysis
+CULINARY_DB = {
+    "rice": {"name": "Rice (Basmati/White)", "cal_100": 130.0, "pro_100": 2.7, "carb_100": 28.2, "fat_100": 0.3, "fiber_100": 0.4},
+    "brown rice": {"name": "Brown Rice", "cal_100": 111.0, "pro_100": 2.6, "carb_100": 23.0, "fat_100": 0.9, "fiber_100": 1.8},
+    "flour": {"name": "Wheat Flour / Atta", "cal_100": 364.0, "pro_100": 10.3, "carb_100": 76.3, "fat_100": 1.0, "fiber_100": 2.7},
+    "atta": {"name": "Wheat Flour / Atta", "cal_100": 364.0, "pro_100": 10.3, "carb_100": 76.3, "fat_100": 1.0, "fiber_100": 2.7},
+    "oats": {"name": "Rolled Oats", "cal_100": 389.0, "pro_100": 16.9, "carb_100": 66.3, "fat_100": 6.9, "fiber_100": 10.6},
+    "bread": {"name": "Whole Wheat Bread", "cal_100": 265.0, "pro_100": 9.0, "carb_100": 49.0, "fat_100": 3.2, "fiber_100": 2.7},
+    "chicken": {"name": "Chicken Breast", "cal_100": 165.0, "pro_100": 31.0, "carb_100": 0.0, "fat_100": 3.6, "fiber_100": 0.0},
+    "egg": {"name": "Egg", "cal_100": 155.0, "pro_100": 13.0, "carb_100": 1.1, "fat_100": 11.0, "fiber_100": 0.0},
+    "eggs": {"name": "Egg", "cal_100": 155.0, "pro_100": 13.0, "carb_100": 1.1, "fat_100": 11.0, "fiber_100": 0.0},
+    "paneer": {"name": "Paneer / Cottage Cheese", "cal_100": 265.0, "pro_100": 18.3, "carb_100": 1.2, "fat_100": 20.8, "fiber_100": 0.0},
+    "tofu": {"name": "Tofu (Firm)", "cal_100": 83.0, "pro_100": 10.0, "carb_100": 2.0, "fat_100": 5.0, "fiber_100": 1.0},
+    "fish": {"name": "Fish Fillet", "cal_100": 136.0, "pro_100": 20.0, "carb_100": 0.0, "fat_100": 5.6, "fiber_100": 0.0},
+    "salmon": {"name": "Salmon Fillet", "cal_100": 208.0, "pro_100": 20.0, "carb_100": 0.0, "fat_100": 13.0, "fiber_100": 0.0},
+    "dal": {"name": "Lentils / Dal", "cal_100": 116.0, "pro_100": 9.0, "carb_100": 20.0, "fat_100": 0.4, "fiber_100": 7.9},
+    "lentil": {"name": "Lentils / Dal", "cal_100": 116.0, "pro_100": 9.0, "carb_100": 20.0, "fat_100": 0.4, "fiber_100": 7.9},
+    "onion": {"name": "Onion", "cal_100": 40.0, "pro_100": 1.1, "carb_100": 9.3, "fat_100": 0.1, "fiber_100": 1.7},
+    "tomato": {"name": "Tomato", "cal_100": 18.0, "pro_100": 0.9, "carb_100": 3.9, "fat_100": 0.2, "fiber_100": 1.2},
+    "potato": {"name": "Potato", "cal_100": 77.0, "pro_100": 2.0, "carb_100": 17.5, "fat_100": 0.1, "fiber_100": 2.2},
+    "broccoli": {"name": "Broccoli", "cal_100": 34.0, "pro_100": 2.8, "carb_100": 6.6, "fat_100": 0.4, "fiber_100": 2.6},
+    "spinach": {"name": "Spinach / Palak", "cal_100": 23.0, "pro_100": 2.9, "carb_100": 3.6, "fat_100": 0.4, "fiber_100": 2.2},
+    "palak": {"name": "Spinach / Palak", "cal_100": 23.0, "pro_100": 2.9, "carb_100": 3.6, "fat_100": 0.4, "fiber_100": 2.2},
+    "garlic": {"name": "Garlic", "cal_100": 149.0, "pro_100": 6.4, "carb_100": 33.1, "fat_100": 0.5, "fiber_100": 2.1},
+    "ginger": {"name": "Ginger", "cal_100": 80.0, "pro_100": 1.8, "carb_100": 17.8, "fat_100": 0.8, "fiber_100": 2.0},
+    "oil": {"name": "Cooking Oil / Olive Oil", "cal_100": 884.0, "pro_100": 0.0, "carb_100": 0.0, "fat_100": 100.0, "fiber_100": 0.0},
+    "butter": {"name": "Butter", "cal_100": 717.0, "pro_100": 0.9, "carb_100": 0.1, "fat_100": 81.1, "fiber_100": 0.0},
+    "ghee": {"name": "Desi Ghee", "cal_100": 900.0, "pro_100": 0.0, "carb_100": 0.0, "fat_100": 100.0, "fiber_100": 0.0},
+    "cheese": {"name": "Cheese", "cal_100": 402.0, "pro_100": 25.0, "carb_100": 1.3, "fat_100": 33.0, "fiber_100": 0.0},
+    "milk": {"name": "Milk", "cal_100": 60.0, "pro_100": 3.2, "carb_100": 4.8, "fat_100": 3.3, "fiber_100": 0.0},
+    "curd": {"name": "Curd / Dahi", "cal_100": 98.0, "pro_100": 11.0, "carb_100": 3.4, "fat_100": 4.3, "fiber_100": 0.0},
+    "dahi": {"name": "Curd / Dahi", "cal_100": 98.0, "pro_100": 11.0, "carb_100": 3.4, "fat_100": 4.3, "fiber_100": 0.0},
+    "spices": {"name": "Spices / Masala", "cal_100": 250.0, "pro_100": 10.0, "carb_100": 40.0, "fat_100": 10.0, "fiber_100": 20.0},
+    "masala": {"name": "Spices / Masala", "cal_100": 250.0, "pro_100": 10.0, "carb_100": 40.0, "fat_100": 10.0, "fiber_100": 20.0},
+    "apple": {"name": "Apple", "cal_100": 52.0, "pro_100": 0.3, "carb_100": 13.8, "fat_100": 0.2, "fiber_100": 2.4},
+    "banana": {"name": "Banana", "cal_100": 89.0, "pro_100": 1.1, "carb_100": 22.8, "fat_100": 0.3, "fiber_100": 2.6},
+    "orange": {"name": "Orange", "cal_100": 47.0, "pro_100": 0.9, "carb_100": 11.8, "fat_100": 0.1, "fiber_100": 2.4},
+}
+
 
 def parse_quantity_and_food(text):
     """
@@ -137,6 +176,165 @@ def calculate_item_macros(food_row, quantity, unit="serving"):
         "carbs": carbs,
         "fat": fat,
         "fiber": round(food_row["fiber"] * ratio, 1)
+    }
+
+
+def analyze_structured_ingredients(dish_name, ingredients_list, cooking_method="pan_cooked", portion_multiplier=1.0):
+    """
+    Analyzes an explicit recipe ingredient list with quantities and units.
+    Calculates calories, protein, carbs, fat, fiber, and individual breakdown.
+    Applies cooking method adjustments and portion size scaling.
+    """
+    total_cal = 0.0
+    total_pro = 0.0
+    total_carb = 0.0
+    total_fat = 0.0
+    total_fiber = 0.0
+    total_weight_g = 0.0
+
+    breakdown = []
+
+    for item in ingredients_list:
+        raw_name = str(item.get("name", "")).strip()
+        if not raw_name:
+            continue
+        try:
+            qty = float(item.get("quantity", 1.0))
+        except (ValueError, TypeError):
+            qty = 1.0
+        unit = str(item.get("unit", "g")).lower().strip()
+
+        # Convert unit to grams
+        if unit in ["g", "gm", "grams", "ml"]:
+            grams = qty
+        elif unit in ["tbsp", "tablespoon"]:
+            grams = qty * 15.0
+        elif unit in ["tsp", "teaspoon"]:
+            grams = qty * 5.0
+        elif unit in ["cup", "cups"]:
+            grams = qty * 180.0
+        elif unit in ["bowl", "bowls"]:
+            grams = qty * 200.0
+        elif unit in ["piece", "pieces", "egg", "eggs", "slice", "slices"]:
+            if "egg" in raw_name.lower():
+                grams = qty * 50.0
+            elif "bread" in raw_name.lower() or "toast" in raw_name.lower():
+                grams = qty * 35.0
+            else:
+                grams = qty * 50.0
+        else:
+            grams = qty * 100.0
+
+        # 1. Check CULINARY_DB first for recipe raw ingredients (per 100g)
+        clean_name_lower = raw_name.lower().strip()
+        found_key = None
+        for k in CULINARY_DB:
+            if k == clean_name_lower or k in clean_name_lower or clean_name_lower in k:
+                found_key = k
+                break
+
+        if found_key:
+            info = CULINARY_DB[found_key]
+            display_name = info["name"]
+            ratio = grams / 100.0
+            cal = info["cal_100"] * ratio
+            pro = info["pro_100"] * ratio
+            carb = info["carb_100"] * ratio
+            fat = info["fat_100"] * ratio
+            fib = info["fiber_100"] * ratio
+        else:
+            # 2. Check SQLite database foods
+            db_match = match_food_in_db(raw_name)
+            if db_match:
+                base_unit = str(db_match["serving_unit"] or "")
+                # Extract gram weight from serving unit if present, e.g. "plate (280g)" -> 280
+                gram_match = re.search(r"(\d+(?:\.\d+)?)\s*g", base_unit, re.IGNORECASE)
+                if gram_match:
+                    base_grams = float(gram_match.group(1))
+                else:
+                    base_s = float(db_match["serving_size"]) if float(db_match["serving_size"]) > 0 else 100.0
+                    base_grams = base_s if base_s > 10.0 else 100.0
+
+                ratio = grams / base_grams
+                cal = float(db_match["calories"]) * ratio
+                pro = float(db_match["protein"]) * ratio
+                carb = float(db_match["carbs"]) * ratio
+                fat = float(db_match["fat"]) * ratio
+                fib = float(db_match["fiber"]) * ratio
+                display_name = db_match["name"]
+            else:
+                display_name = raw_name.title()
+                ratio = grams / 100.0
+                cal = 120.0 * ratio
+                pro = 3.0 * ratio
+                carb = 18.0 * ratio
+                fat = 2.0 * ratio
+                fib = 1.5 * ratio
+
+        total_cal += cal
+        total_pro += pro
+        total_carb += carb
+        total_fat += fat
+        total_fiber += fib
+        total_weight_g += grams
+
+        breakdown.append({
+            "name": display_name,
+            "raw_name": raw_name,
+            "quantity": qty,
+            "unit": unit,
+            "weight_g": round(grams, 1),
+            "calories": round(cal, 1),
+            "protein": round(pro, 1),
+            "carbs": round(carb, 1),
+            "fat": round(fat, 1),
+            "fiber": round(fib, 1)
+        })
+
+    # Cooking method adjustment
+    cooking_note = "Standard preparation"
+    if cooking_method == "deep_fried":
+        added_fat = 8.0
+        total_fat += added_fat
+        total_cal += added_fat * 9.0
+        cooking_note = "Deep fried (+72 kcal from oil absorption)"
+    elif cooking_method in ["grilled_baked", "grilled", "baked"]:
+        cooking_note = "Grilled / Baked (lean preparation)"
+    elif cooking_method in ["boiled_steamed", "boiled", "steamed"]:
+        cooking_note = "Boiled / Steamed (oil-free preparation)"
+    elif cooking_method in ["raw_fresh", "raw", "fresh"]:
+        cooking_note = "Fresh raw ingredients"
+
+    # Portion scaling
+    portion_multiplier = max(0.25, float(portion_multiplier))
+    total_cal = round(total_cal * portion_multiplier, 1)
+    total_pro = round(total_pro * portion_multiplier, 1)
+    total_carb = round(total_carb * portion_multiplier, 1)
+    total_fat = round(total_fat * portion_multiplier, 1)
+    total_fiber = round(total_fiber * portion_multiplier, 1)
+    total_weight_g = round(total_weight_g * portion_multiplier, 1)
+
+    p_pct = round((total_pro * 4.0 / total_cal) * 100, 1) if total_cal > 0 else 0
+    c_pct = round((total_carb * 4.0 / total_cal) * 100, 1) if total_cal > 0 else 0
+    f_pct = round((total_fat * 9.0 / total_cal) * 100, 1) if total_cal > 0 else 0
+
+    return {
+        "dish_name": dish_name.strip() if dish_name else "Custom Meal",
+        "total_calories": total_cal,
+        "total_protein": total_pro,
+        "total_carbs": total_carb,
+        "total_fat": total_fat,
+        "total_fiber": total_fiber,
+        "total_weight_g": total_weight_g,
+        "portion_multiplier": portion_multiplier,
+        "cooking_method": cooking_method,
+        "cooking_note": cooking_note,
+        "macro_percentages": {
+            "protein": p_pct,
+            "carbs": c_pct,
+            "fat": f_pct
+        },
+        "breakdown": breakdown
     }
 
 

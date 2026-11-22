@@ -162,6 +162,82 @@ def upload_view():
     return render_template("upload.html", active_page="upload")
 
 
+@app.route("/api/analyze-ingredients", methods=["POST"])
+def api_analyze_ingredients():
+    """
+    Analyzes structured ingredients from the recipe builder,
+    calculates nutrition totals and individual ingredient breakdowns.
+    """
+    data = request.get_json(silent=True) or request.form
+    dish_name = data.get("dish_name", "").strip()
+    cooking_method = data.get("cooking_method", "pan_cooked")
+    try:
+        portion_multiplier = float(data.get("portion_multiplier", 1.0))
+    except (ValueError, TypeError):
+        portion_multiplier = 1.0
+
+    raw_ingredients = data.get("ingredients", [])
+    if isinstance(raw_ingredients, str):
+        try:
+            import json
+            raw_ingredients = json.loads(raw_ingredients)
+        except Exception:
+            raw_ingredients = []
+
+    analysis = ai_service.analyze_structured_ingredients(
+        dish_name=dish_name,
+        ingredients_list=raw_ingredients,
+        cooking_method=cooking_method,
+        portion_multiplier=portion_multiplier
+    )
+    return jsonify({"success": True, "data": analysis})
+
+
+@app.route("/api/save-analyzed-meal", methods=["POST"])
+def api_save_analyzed_meal():
+    """
+    Saves an analyzed recipe/dish directly into SQLite meal_logs table.
+    """
+    data = request.get_json(silent=True) or request.form
+    meal_date = data.get("meal_date") or date.today().isoformat()
+    meal_type = data.get("meal_type") or "Lunch"
+    dish_name = data.get("dish_name", "Analyzed Meal").strip()
+    image_path = data.get("image_path", None)
+
+    try:
+        total_calories = float(data.get("calories", 0.0))
+        total_protein = float(data.get("protein", 0.0))
+        total_carbs = float(data.get("carbs", 0.0))
+        total_fat = float(data.get("fat", 0.0))
+        serving_description = data.get("serving_description", "1 portion")
+    except (ValueError, TypeError):
+        return jsonify({"success": False, "error": "Invalid nutrition numbers."}), 400
+
+    log_id = database.log_meal_item(
+        meal_date=meal_date,
+        meal_type=meal_type,
+        food_name=dish_name,
+        quantity=1.0,
+        unit=serving_description,
+        calories=total_calories,
+        protein=total_protein,
+        carbs=total_carbs,
+        fat=total_fat,
+        image_path=image_path
+    )
+
+    if request.is_json:
+        return jsonify({
+            "success": True,
+            "message": f"🎉 Saved {dish_name} ({total_calories} kcal) to your {meal_type} diary!",
+            "log_id": log_id,
+            "redirect_url": url_for("summary_view", date=meal_date)
+        })
+
+    flash(f"🎉 Saved {dish_name} ({total_calories} kcal) to your {meal_type} diary!", "success")
+    return redirect(url_for("summary_view", date=meal_date))
+
+
 # -------------------------------------------------------------------------
 # Step 3 & 5: AI Recognition Review & Save Meal to Diary
 # -------------------------------------------------------------------------
