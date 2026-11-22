@@ -34,9 +34,16 @@
                         <img id="image_preview_img" src="" alt="Selected Meal Preview" 
                              style="max-height: 220px; max-width: 100%; border-radius: 8px; border: 2px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain;">
                         <div id="image_preview_meta" style="margin-top: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--primary);"></div>
-                        <button type="button" class="btn btn-outline" style="margin-top: 0.5rem; padding: 0.25rem 0.75rem; font-size: 0.8rem;" onclick="clearImageSelection(event)">
-                            🔄 Change Photo
-                        </button>
+                        
+                        <!-- Action buttons: Change or Clear -->
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.6rem;">
+                            <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.82rem;" onclick="changeImageSelection(event)">
+                                🔄 Change Photo
+                            </button>
+                            <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; color: #dc2626; border-color: #fca5a5; background: #fff1f2;" onclick="clearImageSelection(event)">
+                                ❌ Clear / Remove
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -52,10 +59,13 @@
                         📸 Snap Camera
                     </button>
                 </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); text-align: center; margin-top: 0.4rem;">
+                    💡 Tip: You can also copy any screenshot or photo and press <strong>Ctrl+V</strong> to paste it directly!
+                </p>
             </div>
 
             <!-- Optional Dish Name / Food Hint for accurate AI recognition -->
-            <div class="form-group" style="margin-top: 1rem;">
+            <div class="form-group" style="margin-top: 0.75rem;">
                 <label for="food_hint" style="display: flex; justify-content: space-between;">
                     <span>Dish Name or Hint <span style="font-weight: normal; color: var(--text-muted);">(Optional)</span></span>
                     <span style="font-size: 0.78rem; color: var(--primary);">Boosts recognition accuracy</span>
@@ -91,17 +101,20 @@
         </form>
     </div>
 
-    <!-- Option B: Enter Ingredients / Text Description -->
+    <!-- Option B: Enter Ingredients / Text Description / Voice Input -->
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h2 class="card-title">✍️ Option B: Enter Meal Ingredients</h2>
+            <button type="button" id="voice_input_btn" class="btn btn-outline" style="padding: 0.3rem 0.65rem; font-size: 0.82rem;" onclick="startVoiceRecognition()">
+                🎙️ Speak Meal
+            </button>
         </div>
         <form method="POST" action="{{ url_for('upload_view') }}">
             <input type="hidden" name="input_type" value="text">
 
             <div class="form-group">
-                <label for="ingredients_text">Enter ingredients or dish description</label>
-                <textarea id="ingredients_text" name="ingredients_text" class="form-control" placeholder="e.g. 2 boiled eggs, 1 slice whole wheat bread, 1 medium apple" required></textarea>
+                <label for="ingredients_text">Enter ingredients, dish description, or speak</label>
+                <textarea id="ingredients_text" name="ingredients_text" class="form-control" placeholder="e.g. 2 boiled eggs, 1 slice whole wheat bread, 1 medium apple" required style="min-height: 95px;"></textarea>
                 <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem;">
                     💡 Separate ingredients with commas or "and". Quantities like "150g rice" or "2 eggs" are automatically understood.
                 </p>
@@ -133,10 +146,37 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-secondary" style="width: 100%;">
+            <button type="submit" class="btn btn-secondary" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
                 🔍 Analyze Ingredients & Estimate Portions
             </button>
         </form>
+    </div>
+</div>
+
+<!-- Option C: Quick Search & Log from Nutrition Database -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+            <h2 class="card-title">🔍 Option C: Quick Search & 1-Click Food Logger (77+ Items)</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Instant lookup without taking photos or typing descriptions.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="quick_db_meal_type" style="font-size: 0.85rem; font-weight: 600; margin: 0;">Log As:</label>
+            <select id="quick_db_meal_type" class="form-control" style="width: auto; padding: 0.3rem 0.6rem; font-size: 0.85rem;">
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch" selected>Lunch</option>
+                <option value="Dinner">Dinner</option>
+                <option value="Snack">Snack</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+        <input type="text" id="quick_db_search" class="form-control" placeholder="Search any food (e.g., Apple, Boiled Egg, Chicken Biryani, Dosa, Paneer, Rice, Almonds...)" oninput="searchDatabaseFoods(this.value)">
+    </div>
+    
+    <div id="quick_search_results" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+        <!-- Dynamically populated via /api/search -->
     </div>
 </div>
 {% endblock %}
@@ -183,6 +223,23 @@ if (dropzone) {
     });
 }
 
+// Clipboard Paste (Ctrl+V) support
+window.addEventListener('paste', function(e) {
+    const items = (e.clipboardData || window.clipboardData).items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            const blob = items[i].getAsFile();
+            const file = new File([blob], "pasted_meal_photo.png", { type: blob.type });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+            displayImagePreview(file);
+            break;
+        }
+    }
+});
+
 function handleFileSelected(input) {
     if (input.files && input.files[0]) {
         displayImagePreview(input.files[0]);
@@ -213,13 +270,30 @@ function displayImagePreview(file) {
     reader.readAsDataURL(file);
 }
 
+// Dedicated Clear Function: Resets input and returns dropzone to prompt
 function clearImageSelection(event) {
-    event.stopPropagation();
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
     fileInput.value = '';
     previewImg.src = '';
     previewBox.style.display = 'none';
     promptBox.style.display = 'block';
-    document.getElementById('meal_image').click();
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '⚡ Run AI Food Recognition';
+        submitBtn.style.opacity = '1';
+    }
+}
+
+// Dedicated Change Photo Function
+function changeImageSelection(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    fileInput.click();
 }
 
 function setPhotoHint(hintText) {
@@ -243,5 +317,111 @@ function setSample(text, mealType) {
     document.getElementById('ingredients_text').value = text;
     document.getElementById('text_meal_type').value = mealType;
 }
+
+// Voice Recognition Function (Option B)
+function startVoiceRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("Speech recognition is not supported in this browser. Please use Google Chrome or Edge.");
+        return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    const voiceBtn = document.getElementById('voice_input_btn');
+    if (voiceBtn) {
+        voiceBtn.innerHTML = '🔴 Listening... speak meal';
+        voiceBtn.style.color = '#dc2626';
+    }
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        const textarea = document.getElementById('ingredients_text');
+        if (textarea.value) {
+            textarea.value += ', ' + transcript;
+        } else {
+            textarea.value = transcript;
+        }
+        if (voiceBtn) {
+            voiceBtn.innerHTML = '🎙️ Speak Meal';
+            voiceBtn.style.color = '';
+        }
+    };
+    recognition.onerror = function() {
+        if (voiceBtn) {
+            voiceBtn.innerHTML = '🎙️ Speak Meal';
+            voiceBtn.style.color = '';
+        }
+    };
+    recognition.onend = function() {
+        if (voiceBtn) {
+            voiceBtn.innerHTML = '🎙️ Speak Meal';
+            voiceBtn.style.color = '';
+        }
+    };
+    recognition.start();
+}
+
+// Option C: Database Search & Quick Log
+let searchDebounce = null;
+function searchDatabaseFoods(query) {
+    clearTimeout(searchDebounce);
+    const container = document.getElementById('quick_search_results');
+    const searchTerm = (query || '').trim();
+    if (!searchTerm) {
+        loadPopularFoods();
+        return;
+    }
+    searchDebounce = setTimeout(() => {
+        fetch('/api/search?q=' + encodeURIComponent(searchTerm))
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; grid-column: 1/-1;">No matching foods found. Try another term or add a custom food.</p>';
+                    return;
+                }
+                renderFoodCards(data);
+            })
+            .catch(err => {
+                console.error("Error searching foods:", err);
+            });
+    }, 200);
+}
+
+function loadPopularFoods() {
+    fetch('/api/search?q=')
+        .then(res => res.json())
+        .then(data => {
+            renderFoodCards(data.slice(0, 8));
+        })
+        .catch(err => console.error(err));
+}
+
+function renderFoodCards(foods) {
+    const container = document.getElementById('quick_search_results');
+    const mealType = document.getElementById('quick_db_meal_type').value;
+    container.innerHTML = foods.map(food => `
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+            <div style="flex: 1; min-width: 0;">
+                <strong style="color: var(--primary-dark); font-size: 0.9rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${food.name}</strong>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                    <span style="font-weight: 600; color: var(--primary);">${food.calories} kcal</span> &bull; P: ${food.protein}g, C: ${food.carbs}g, F: ${food.fat}g
+                </div>
+            </div>
+            <form method="POST" action="/database/quick-log" style="margin: 0; flex-shrink: 0;">
+                <input type="hidden" name="food_id" value="${food.id}">
+                <input type="hidden" name="meal_type" value="${mealType}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem; border-radius: 4px; white-space: nowrap;">
+                    ➕ Log
+                </button>
+            </form>
+        </div>
+    `).join('');
+}
+
+// Initial populate of Option C
+document.addEventListener('DOMContentLoaded', function() {
+    loadPopularFoods();
+});
 </script>
 {% endblock %}
