@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <radialGradient id="ppBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </radialGradient>
+    <radialGradient id="spinachGravy" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#2d6a4f"/>
+      <stop offset="50%" stop-color="#1b4332"/>
+      <stop offset="100%" stop-color="#081c15"/>
+    </radialGradient>
+    <linearGradient id="paneerCube" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#fef3c7"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#ppBg)"/>
+  <!-- Bowl Rim -->
+  <ellipse cx="100" cy="115" rx="72" ry="48" fill="#cbd5e1" stroke="#94a3b8" stroke-width="3"/>
+  <ellipse cx="100" cy="112" rx="68" ry="44" fill="#f8fafc"/>
+  <!-- Spinach Gravy -->
+  <ellipse cx="100" cy="112" rx="62" ry="38" fill="url(#spinachGravy)"/>
+  <!-- Paneer Cubes -->
+  <rect x="70" y="95" width="22" height="18" rx="3" fill="url(#paneerCube)" stroke="#f59e0b" stroke-width="1.2" transform="rotate(-8 81 104)"/>
+  <rect x="105" y="98" width="24" height="20" rx="3" fill="url(#paneerCube)" stroke="#f59e0b" stroke-width="1.2" transform="rotate(12 117 108)"/>
+  <rect x="85" y="112" width="20" height="16" rx="3" fill="url(#paneerCube)" stroke="#f59e0b" stroke-width="1.2" transform="rotate(5 95 120)"/>
+  <!-- Cream Swirl -->
+  <path d="M75 110 Q90 100 110 115 Q125 125 135 110" fill="none" stroke="#fffbeb" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+  <path d="M85 120 Q100 128 120 120" fill="none" stroke="#fffbeb" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+  <!-- Ginger Garnish -->
+  <line x1="95" y1="102" x2="108" y2="106" stroke="#fde047" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="100" y1="99" x2="105" y2="109" stroke="#fde047" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

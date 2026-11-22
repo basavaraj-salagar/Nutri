@@ -8,3 +8,6 @@ if root_dir not in sys.path:
 
 # Import the Flask application
 from app import app
+
+# Export handler for Vercel Python WSGI
+handler = app

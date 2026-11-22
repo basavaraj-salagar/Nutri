@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs>
+    <radialGradient id="pakG" cx="45%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#fde047"/><stop offset="50%" stop-color="#d97706"/><stop offset="100%" stop-color="#78350f"/>
+    </radialGradient>
+    <filter id="sh8"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.2"/></filter>
+  </defs>
+  <rect width="320" height="220" fill="#f0fdf4"/>
+  <ellipse cx="160" cy="135" rx="120" ry="50" fill="#e2e8f0" filter="url(#sh8)"/>
+  <!-- Fritter Clusters -->
+  <g filter="url(#sh8)">
+    <circle cx="115" cy="125" r="22" fill="url(#pakG)"/>
+    <circle cx="160" cy="115" r="24" fill="url(#pakG)"/>
+    <circle cx="205" cy="125" r="22" fill="url(#pakG)"/>
+    <circle cx="138" cy="135" r="20" fill="url(#pakG)"/>
+    <circle cx="182" cy="135" r="20" fill="url(#pakG)"/>
+    <!-- Spiky onion slice strands -->
+    <path d="M 95,120 Q 115,115 130,128" stroke="#92400e" stroke-width="2.5" fill="none"/>
+    <path d="M 145,108 Q 160,102 175,115" stroke="#92400e" stroke-width="2.5" fill="none"/>
+    <path d="M 195,118 Q 215,112 225,128" stroke="#92400e" stroke-width="2.5" fill="none"/>
+  </g>
+  <!-- Fried Green Chili -->
+  <path d="M 130,95 Q 160,85 190,95" stroke="#15803d" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <text x="160" y="202" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#15803d" text-anchor="middle">Crispy Onion Pakoda</text>
+</svg>

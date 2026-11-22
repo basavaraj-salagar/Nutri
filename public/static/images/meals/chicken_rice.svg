@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs>
+    <radialGradient id="crPlateG" cx="45%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="80%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#e2e8f0"/>
+    </radialGradient>
+    <filter id="crPlateSh"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.18"/></filter>
+  </defs>
+  <rect width="320" height="220" fill="#fff1f2"/>
+  <!-- Plate -->
+  <ellipse cx="160" cy="128" rx="125" ry="58" fill="#cbd5e1" filter="url(#crPlateSh)"/>
+  <ellipse cx="160" cy="124" rx="118" ry="52" fill="url(#crPlateG)"/>
+  <!-- Seasoned Rice Mound -->
+  <ellipse cx="125" cy="118" rx="55" ry="32" fill="#fef3c7" filter="url(#crPlateSh)"/>
+  <!-- Tender Sliced Chicken -->
+  <g filter="url(#crPlateSh)">
+    <rect x="170" y="105" width="45" height="12" rx="3" fill="#fed7aa"/>
+    <rect x="175" y="115" width="42" height="12" rx="3" fill="#fdba74"/>
+    <rect x="172" y="125" width="45" height="12" rx="3" fill="#fed7aa"/>
+    <!-- Soy / Sesame sauce drizzle -->
+    <path d="M 172,112 Q 195,110 215,114" stroke="#78350f" stroke-width="2" fill="none"/>
+  </g>
+  <!-- Cucumber Slices -->
+  <ellipse cx="105" cy="138" rx="14" ry="7" fill="#86efac"/>
+  <ellipse cx="125" cy="140" rx="14" ry="7" fill="#86efac"/>
+  <!-- Chili sauce bowl -->
+  <circle cx="230" cy="95" r="16" fill="#ef4444" filter="url(#crPlateSh)"/>
+  <circle cx="230" cy="95" r="12" fill="#dc2626"/>
+  <text x="160" y="202" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#be123c" text-anchor="middle">Savory Chicken Rice</text>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs>
+    <radialGradient id="ctG" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#f87171"/><stop offset="60%" stop-color="#dc2626"/><stop offset="100%" stop-color="#991b1b"/>
+    </radialGradient>
+    <filter id="ctSh"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.2"/></filter>
+  </defs>
+  <rect width="320" height="220" fill="#fff1f2"/>
+  <!-- Sizzler plate / Wooden Base -->
+  <rect x="40" y="100" width="240" height="60" rx="15" fill="#78350f" filter="url(#ctSh)"/>
+  <rect x="50" y="105" width="220" height="50" rx="10" fill="#1e293b"/>
+  <!-- Tikka Chunks -->
+  <g filter="url(#ctSh)">
+    <rect x="75" y="112" width="30" height="26" rx="6" fill="url(#ctG)"/>
+    <rect x="115" y="110" width="32" height="28" rx="6" fill="url(#ctG)"/>
+    <rect x="155" y="114" width="30" height="26" rx="6" fill="url(#ctG)"/>
+    <rect x="195" y="112" width="32" height="27" rx="6" fill="url(#ctG)"/>
+    <!-- Char marks -->
+    <line x1="80" y1="116" x2="95" y2="116" stroke="#450a0a" stroke-width="2.5"/>
+    <line x1="120" y1="120" x2="135" y2="120" stroke="#450a0a" stroke-width="2.5"/>
+    <line x1="162" y1="122" x2="175" y2="122" stroke="#450a0a" stroke-width="2.5"/>
+    <line x1="202" y1="118" x2="215" y2="118" stroke="#450a0a" stroke-width="2.5"/>
+  </g>
+  <!-- Lemon Wedge & Onion rings -->
+  <path d="M 235,122 A 12 12 0 0 1 250 135 L 235 135 Z" fill="#facc15"/>
+  <circle cx="70" cy="130" r="10" stroke="#f43f5e" stroke-width="2.5" fill="none" opacity="0.8"/>
+  <text x="160" y="198" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#dc2626" text-anchor="middle">Tandoori Chicken Tikka</text>
+</svg>

@@ -10,18 +10,35 @@ import random
 import tempfile
 from datetime import datetime, date
 
+def _is_serverless_env():
+    """Detect if running in Vercel, AWS Lambda, or a read-only serverless filesystem."""
+    serverless_vars = (
+        "VERCEL", "VERCEL_ENV", "VERCEL_URL", "VERCEL_REGION",
+        "AWS_LAMBDA_FUNCTION_NAME", "AWS_EXECUTION_ENV", "LAMBDA_TASK_ROOT"
+    )
+    if any(k in os.environ for k in serverless_vars):
+        return True
+    try:
+        test_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".write_test")
+        with open(test_path, "w") as f:
+            f.write("1")
+        os.remove(test_path)
+        return False
+    except Exception:
+        return True
+
 # On Vercel / serverless platforms, root filesystem is read-only. Use temp directory for writable SQLite db.
-if os.environ.get("VERCEL"):
+if _is_serverless_env():
     temp_dir = tempfile.gettempdir()
     DB_PATH = os.path.join(temp_dir, "nutritrack.db")
-    bundled_db = os.path.join(os.path.dirname(__file__), "nutritrack.db")
+    bundled_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nutritrack.db")
     if not os.path.exists(DB_PATH) and os.path.exists(bundled_db):
         try:
             shutil.copy2(bundled_db, DB_PATH)
         except Exception:
             pass
 else:
-    DB_PATH = os.path.join(os.path.dirname(__file__), "nutritrack.db")
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nutritrack.db")
 
 
 def get_db_connection():
@@ -610,6 +627,14 @@ def get_daily_summary(date_str):
     target_fat = profile["daily_fat_target"]
 
     remaining_cal = round(target_cal - total_calories, 1)
+    is_surplus = remaining_cal < 0
+    surplus_cal = round(abs(remaining_cal), 1) if is_surplus else 0.0
+
+    # Real percentage achieved (can exceed 100%)
+    cal_pct_raw = round((total_calories / target_cal * 100), 1) if target_cal > 0 else 0.0
+    pro_pct_raw = round((total_protein / target_pro * 100), 1) if target_pro > 0 else 0.0
+    carb_pct_raw = round((total_carbs / target_carb * 100), 1) if target_carb > 0 else 0.0
+    fat_pct_raw = round((total_fat / target_fat * 100), 1) if target_fat > 0 else 0.0
 
     meals_by_type = {
         "Breakfast": [],
@@ -637,11 +662,61 @@ def get_daily_summary(date_str):
         "target_carbs": target_carb,
         "target_fat": target_fat,
         "remaining_calories": remaining_cal,
-        "calorie_pct": min(100, round((total_calories / target_cal * 100), 1)) if target_cal > 0 else 0,
-        "protein_pct": min(100, round((total_protein / target_pro * 100), 1)) if target_pro > 0 else 0,
-        "carb_pct": min(100, round((total_carbs / target_carb * 100), 1)) if target_carb > 0 else 0,
-        "fat_pct": min(100, round((total_fat / target_fat * 100), 1)) if target_fat > 0 else 0,
+        "is_surplus": is_surplus,
+        "surplus_calories": surplus_cal,
+        # Actual percentage values (correctly showing values > 100% when targets are exceeded)
+        "calorie_pct": cal_pct_raw,
+        "protein_pct": pro_pct_raw,
+        "carb_pct": carb_pct_raw,
+        "fat_pct": fat_pct_raw,
+        # Clamped values strictly for CSS progress-bar widths (0% to 100%)
+        "calorie_bar_pct": min(100.0, max(0.0, cal_pct_raw)),
+        "protein_bar_pct": min(100.0, max(0.0, pro_pct_raw)),
+        "carb_bar_pct": min(100.0, max(0.0, carb_pct_raw)),
+        "fat_bar_pct": min(100.0, max(0.0, fat_pct_raw)),
     }
+
+
+def get_meal_log_by_id(log_id):
+    """Fetches a single meal log entry by ID."""
+    init_db()
+    conn = get_db_connection()
+    log = conn.execute("SELECT * FROM meal_logs WHERE id = ?", (log_id,)).fetchone()
+    conn.close()
+    return log
+
+
+def update_meal_log_quantity(log_id, new_quantity):
+    """
+    Updates the portion/quantity of a logged meal in SQLite and accurately recalculates macros.
+    """
+    init_db()
+    conn = get_db_connection()
+    log = conn.execute("SELECT * FROM meal_logs WHERE id = ?", (log_id,)).fetchone()
+    if not log:
+        conn.close()
+        return False
+
+    old_qty = float(log["quantity"]) if float(log["quantity"]) > 0 else 1.0
+    ratio = float(new_quantity) / old_qty
+
+    new_cals = round(float(log["calories"]) * ratio, 1)
+    new_pro = round(float(log["protein"]) * ratio, 1)
+    new_carb = round(float(log["carbs"]) * ratio, 1)
+    new_fat = round(float(log["fat"]) * ratio, 1)
+
+    conn.execute("""
+        UPDATE meal_logs SET
+            quantity = ?,
+            calories = ?,
+            protein = ?,
+            carbs = ?,
+            fat = ?
+        WHERE id = ?
+    """, (float(new_quantity), new_cals, new_pro, new_carb, new_fat, log_id))
+    conn.commit()
+    conn.close()
+    return True
 
 
 def get_personalized_suggestions(date_str):

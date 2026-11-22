@@ -261,8 +261,59 @@ def run_tests():
             database.delete_log(t_log["id"])
     print("  ✓ Cleaned up auto-logged order test diary entries.")
 
+    # -------------------------------------------------------------
+    # Test 9: Phase 5 - Portion Adjustment & Surplus Calculations
+    # -------------------------------------------------------------
+    print("\n[Test 9] Testing Portion Adjustment, Exceeded Targets & Calorie Surplus...")
+    calc_test_date = "2099-12-31"
+    # Log 1 serving of Brown Rice
+    test_log_id = database.log_meal_item(
+        meal_date=calc_test_date,
+        meal_type="Lunch",
+        food_name="Cooked Brown Rice",
+        quantity=1.0,
+        unit="bowl (150g)",
+        calories=166.0,
+        protein=3.5,
+        carbs=35.0,
+        fat=1.2
+    )
+    # Edit portion to 2.5 servings
+    success = database.update_meal_log_quantity(test_log_id, 2.5)
+    assert success is True, "Expected update_meal_log_quantity to return True"
+    updated_log = database.get_meal_log_by_id(test_log_id)
+    assert updated_log["quantity"] == 2.5, f"Expected 2.5 quantity, got {updated_log['quantity']}"
+    assert updated_log["calories"] == 415.0, f"Expected 415.0 kcal, got {updated_log['calories']}"
+    assert updated_log["carbs"] == 87.5, f"Expected 87.5g carbs, got {updated_log['carbs']}"
+    print(f"  ✓ Successfully updated portion from 1.0 to 2.5: calories {updated_log['calories']} kcal, carbs {updated_log['carbs']}g")
+
+    # Add heavy meal to exceed targets and test surplus
+    surplus_log_id = database.log_meal_item(
+        meal_date=calc_test_date,
+        meal_type="Dinner",
+        food_name="Heavy Feast",
+        quantity=1.0,
+        unit="portion",
+        calories=3000.0,
+        protein=150.0,
+        carbs=350.0,
+        fat=120.0
+    )
+    surplus_summary = database.get_daily_summary(calc_test_date)
+    assert surplus_summary["is_surplus"] is True, "Expected is_surplus to be True when calories exceed target"
+    assert surplus_summary["surplus_calories"] > 0, "Expected surplus_calories > 0"
+    assert surplus_summary["calorie_pct"] > 100.0, f"Expected calorie_pct > 100, got {surplus_summary['calorie_pct']}"
+    assert surplus_summary["calorie_bar_pct"] == 100.0, f"Expected calorie_bar_pct clamped to 100, got {surplus_summary['calorie_bar_pct']}"
+    print(f"  ✓ Calorie surplus accurately detected: {surplus_summary['surplus_calories']} kcal surplus")
+    print(f"  ✓ Unclamped percentage: {surplus_summary['calorie_pct']}% achieved (CSS bar clamped at {surplus_summary['calorie_bar_pct']}%)")
+
+    # Clean up test records
+    database.delete_log(test_log_id)
+    database.delete_log(surplus_log_id)
+    print("  ✓ Cleaned up portion & surplus test records.")
+
     print("\n" + "=" * 60)
-    print("✅ ALL METHODOLOGY STEPS, MEALS, SNACKS & DELIVERY TESTS PASSED!")
+    print("✅ ALL METHODOLOGY STEPS, MEALS, SNACKS, DELIVERY & NUTRITION CALC TESTS PASSED!")
     print("=" * 60)
 
 

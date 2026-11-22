@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <radialGradient id="khBg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fef9c3"/><stop offset="100%" stop-color="#fef08a"/></radialGradient>
+    <radialGradient id="khichdiRice" cx="50%" cy="45%" r="55%"><stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#eab308"/><stop offset="100%" stop-color="#ca8a04"/></radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#khBg)"/>
+  <ellipse cx="100" cy="115" rx="72" ry="48" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3"/>
+  <ellipse cx="100" cy="112" rx="66" ry="42" fill="url(#khichdiRice)"/>
+  <ellipse cx="76" cy="104" rx="4" ry="2" fill="#fff" opacity="0.8" transform="rotate(15 76 104)"/>
+  <ellipse cx="88" cy="116" rx="4" ry="2" fill="#fff" opacity="0.8" transform="rotate(-20 88 116)"/>
+  <ellipse cx="116" cy="106" rx="4" ry="2" fill="#fff" opacity="0.8" transform="rotate(30 116 106)"/>
+  <ellipse cx="124" cy="118" rx="4" ry="2" fill="#fff" opacity="0.8" transform="rotate(-15 124 118)"/>
+  <ellipse cx="100" cy="110" rx="16" ry="10" fill="#fde047" opacity="0.75"/>
+  <circle cx="96" cy="108" r="1" fill="#78350f"/>
+  <circle cx="104" cy="112" r="1" fill="#78350f"/>
+  <circle cx="99" cy="106" r="1.2" fill="#78350f"/>
+  <circle cx="102" cy="114" r="1" fill="#78350f"/>
+  <circle cx="100" cy="108" r="4.5" fill="#fef08a" stroke="#eab308" stroke-width="1"/>
+</svg>

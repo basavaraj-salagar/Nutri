@@ -34,14 +34,14 @@
             <span class="metric-sub">of {{ summary.target_calories|round|int }} kcal target</span>
             <div class="progress-container">
                 <div class="progress-bar-bg">
-                    <div class="progress-bar-fill fill-green" style="width: {{ summary.calorie_pct }}%;"></div>
+                    <div class="progress-bar-fill fill-green" style="width: {{ summary.calorie_bar_pct }}%;"></div>
                 </div>
             </div>
-            <span style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">
-                {% if summary.remaining_calories >= 0 %}
-                    {{ summary.remaining_calories|round|int }} kcal left
+            <span style="font-size: 0.82rem; font-weight: 600;">
+                {% if summary.is_surplus %}
+                    <span style="color: #dc2626;">⚠️ {{ summary.surplus_calories }} kcal surplus</span>
                 {% else %}
-                    {{ (summary.remaining_calories * -1)|round|int }} kcal surplus
+                    <span style="color: var(--primary);">🟢 {{ summary.remaining_calories|round|int }} kcal left</span>
                 {% endif %}
             </span>
         </div>
@@ -53,10 +53,15 @@
             <span class="metric-sub">of {{ summary.target_protein|round(1) }}g target</span>
             <div class="progress-container">
                 <div class="progress-bar-bg">
-                    <div class="progress-bar-fill fill-orange" style="width: {{ summary.protein_pct }}%;"></div>
+                    <div class="progress-bar-fill fill-orange" style="width: {{ summary.protein_bar_pct }}%;"></div>
                 </div>
             </div>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ summary.protein_pct }}% achieved</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+                {{ summary.protein_pct }}% achieved
+                {% if summary.protein_pct > 100 %}
+                    <span style="background: #fef3c7; color: #b45309; padding: 1px 5px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; margin-left: 2px;">Exceeded</span>
+                {% endif %}
+            </span>
         </div>
 
         <!-- Carbs -->
@@ -66,10 +71,15 @@
             <span class="metric-sub">of {{ summary.target_carbs|round(1) }}g target</span>
             <div class="progress-container">
                 <div class="progress-bar-bg">
-                    <div class="progress-bar-fill fill-blue" style="width: {{ summary.carb_pct }}%;"></div>
+                    <div class="progress-bar-fill fill-blue" style="width: {{ summary.carb_bar_pct }}%;"></div>
                 </div>
             </div>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ summary.carb_pct }}% achieved</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+                {{ summary.carb_pct }}% achieved
+                {% if summary.carb_pct > 100 %}
+                    <span style="background: #fef3c7; color: #b45309; padding: 1px 5px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; margin-left: 2px;">Exceeded</span>
+                {% endif %}
+            </span>
         </div>
 
         <!-- Fat -->
@@ -79,10 +89,15 @@
             <span class="metric-sub">of {{ summary.target_fat|round(1) }}g target</span>
             <div class="progress-container">
                 <div class="progress-bar-bg">
-                    <div class="progress-bar-fill fill-purple" style="width: {{ summary.fat_pct }}%;"></div>
+                    <div class="progress-bar-fill fill-purple" style="width: {{ summary.fat_bar_pct }}%;"></div>
                 </div>
             </div>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ summary.fat_pct }}% achieved</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+                {{ summary.fat_pct }}% achieved
+                {% if summary.fat_pct > 100 %}
+                    <span style="background: #fef3c7; color: #b45309; padding: 1px 5px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; margin-left: 2px;">Exceeded</span>
+                {% endif %}
+            </span>
         </div>
     </div>
 </div>
@@ -121,10 +136,16 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                             <span style="font-weight: 700; color: var(--primary-dark); font-size: 0.95rem;">
                                 {{ item.calories }} kcal
                             </span>
+                            <!-- Edit Portion Form -->
+                            <form method="POST" action="{{ url_for('edit_meal_log_view', log_id=item.id) }}" style="display: inline-flex; align-items: center; gap: 0.2rem;">
+                                <input type="hidden" name="date" value="{{ selected_date }}">
+                                <input type="number" name="quantity" value="{{ item.quantity }}" step="0.1" min="0.1" max="20" style="width: 54px; padding: 2px 4px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px; text-align: center;" title="Edit quantity">
+                                <button type="submit" class="btn btn-outline" style="padding: 2px 6px; font-size: 0.78rem; border-radius: 4px;" title="Save updated portion">💾</button>
+                            </form>
                             <form method="POST" action="{{ url_for('delete_meal_log_view', log_id=item.id) }}" onsubmit="return confirm('Remove this food from your diary?');">
                                 <input type="hidden" name="date" value="{{ selected_date }}">
                                 <button type="submit" class="btn-danger-sm" title="Delete entry">&times;</button>

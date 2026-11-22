@@ -5,7 +5,7 @@ Main Flask Application with SQLite integration, AI food recognition, and persona
 
 import os
 from datetime import date
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 
 import database
@@ -18,12 +18,33 @@ app.secret_key = "nutritrack_super_secret_key_change_in_production"
 # Configure Uploads
 import tempfile
 
-if os.environ.get("VERCEL"):
+def _is_serverless_env():
+    serverless_vars = (
+        "VERCEL", "VERCEL_ENV", "VERCEL_URL", "VERCEL_REGION",
+        "AWS_LAMBDA_FUNCTION_NAME", "AWS_EXECUTION_ENV", "LAMBDA_TASK_ROOT"
+    )
+    if any(k in os.environ for k in serverless_vars):
+        return True
+    try:
+        test_path = os.path.join(app.root_path, ".write_test")
+        with open(test_path, "w") as f:
+            f.write("1")
+        os.remove(test_path)
+        return False
+    except Exception:
+        return True
+
+if _is_serverless_env():
     UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), "nutritrack_uploads")
 else:
     UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
+
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except Exception:
+    UPLOAD_FOLDER = tempfile.gettempdir()
+
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max upload
 
@@ -34,7 +55,10 @@ def allowed_file(filename):
 
 
 # Initialize database tables on app startup
-database.init_db()
+try:
+    database.init_db()
+except Exception as e:
+    print(f"Database initialization note: {e}")
 
 
 # -------------------------------------------------------------------------
@@ -451,6 +475,34 @@ def delete_meal_log_view(log_id):
     database.delete_log(log_id)
     flash("🗑️ Meal entry removed from your diary.", "success")
     return redirect(url_for("summary_view", date=meal_date))
+
+
+@app.route("/edit-log/<int:log_id>", methods=["POST"])
+def edit_meal_log_view(log_id):
+    """
+    Updates a logged meal's portion/quantity and updates daily nutrition totals.
+    """
+    meal_date = request.form.get("date", date.today().isoformat())
+    try:
+        new_quantity = float(request.form.get("quantity", 1.0))
+        if new_quantity <= 0:
+            flash("Portion quantity must be greater than zero.", "warning")
+        else:
+            success = database.update_meal_log_quantity(log_id, new_quantity)
+            if success:
+                flash(f"✏️ Meal portion updated to {new_quantity} serving(s).", "success")
+            else:
+                flash("Meal entry not found.", "error")
+    except ValueError:
+        flash("Invalid quantity entered.", "error")
+
+    return redirect(url_for("summary_view", date=meal_date))
+
+
+@app.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    """Serves uploaded meal photos reliably in local and serverless environments."""
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 
 # -------------------------------------------------------------------------

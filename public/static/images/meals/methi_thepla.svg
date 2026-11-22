@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <radialGradient id="mtBg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fefce8"/><stop offset="100%" stop-color="#fef08a"/></radialGradient>
+    <radialGradient id="theplaGold" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fde047"/><stop offset="70%" stop-color="#eab308"/><stop offset="100%" stop-color="#ca8a04"/></radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#mtBg)"/>
+  <ellipse cx="100" cy="115" rx="74" ry="48" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2.5"/>
+  <ellipse cx="85" cy="118" rx="35" ry="25" fill="url(#theplaGold)" stroke="#a16207" stroke-width="1.2"/>
+  <ellipse cx="118" cy="114" rx="34" ry="24" fill="url(#theplaGold)" stroke="#a16207" stroke-width="1.2"/>
+  <ellipse cx="100" cy="106" rx="36" ry="26" fill="url(#theplaGold)" stroke="#a16207" stroke-width="1.5"/>
+  <circle cx="88" cy="102" r="1.8" fill="#15803d"/>
+  <circle cx="96" cy="98" r="1.5" fill="#166534"/>
+  <circle cx="108" cy="102" r="1.8" fill="#15803d"/>
+  <circle cx="115" cy="108" r="1.5" fill="#166534"/>
+  <circle cx="94" cy="112" r="1.8" fill="#15803d"/>
+  <circle cx="104" cy="114" r="1.5" fill="#166534"/>
+  <circle cx="84" cy="108" r="1.5" fill="#15803d"/>
+  <circle cx="102" cy="108" r="1.5" fill="#b45309"/>
+  <circle cx="112" cy="104" r="1.2" fill="#b45309"/>
+</svg>

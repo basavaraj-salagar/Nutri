@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <radialGradient id="ckBg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fefce8"/><stop offset="100%" stop-color="#fef08a"/></radialGradient>
+    <radialGradient id="kormaGravy" cx="45%" cy="40%" r="60%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="60%" stop-color="#d97706"/><stop offset="100%" stop-color="#b45309"/></radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#ckBg)"/>
+  <ellipse cx="100" cy="115" rx="72" ry="48" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3"/>
+  <ellipse cx="100" cy="112" rx="66" ry="42" fill="url(#kormaGravy)"/>
+  <ellipse cx="80" cy="106" rx="14" ry="10" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <ellipse cx="118" cy="108" rx="15" ry="11" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <ellipse cx="98" cy="122" rx="13" ry="9" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <ellipse cx="75" cy="96" rx="6" ry="2.5" fill="#ffffff" transform="rotate(-20 75 96)"/>
+  <ellipse cx="122" cy="98" rx="6" ry="2.5" fill="#ffffff" transform="rotate(25 122 98)"/>
+  <ellipse cx="98" cy="108" rx="6" ry="2.5" fill="#ffffff" transform="rotate(10 98 108)"/>
+  <line x1="88" y1="102" x2="94" y2="106" stroke="#dc2626" stroke-width="1.5"/>
+  <line x1="105" y1="115" x2="112" y2="118" stroke="#dc2626" stroke-width="1.5"/>
+</svg>

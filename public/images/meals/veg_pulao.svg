@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bowlGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="320" height="220" fill="#f0fdf4"/>
+  <!-- Ceramic Bowl -->
+  <ellipse cx="160" cy="140" rx="100" ry="45" fill="#cbd5e1" filter="url(#sh)"/>
+  <path d="M 60,135 Q 160,205 260,135 Q 260,115 160,115 Q 60,115 60,135 Z" fill="url(#bowlGrad)"/>
+  <!-- Pulao Rice Mound -->
+  <ellipse cx="160" cy="115" rx="85" ry="38" fill="#fef3c7"/>
+  <!-- Grains and Veggies -->
+  <!-- Green Peas -->
+  <circle cx="130" cy="110" r="5" fill="#22c55e"/><circle cx="180" cy="120" r="5" fill="#16a34a"/>
+  <circle cx="155" cy="100" r="4.5" fill="#22c55e"/><circle cx="210" cy="115" r="4.5" fill="#15803d"/>
+  <!-- Carrot cubes -->
+  <rect x="140" y="112" width="7" height="7" rx="1" fill="#f97316"/>
+  <rect x="170" y="102" width="7" height="6" rx="1" fill="#ea580c"/>
+  <rect x="110" y="118" width="6" height="6" rx="1" fill="#f97316"/>
+  <rect x="195" y="106" width="6" height="6" rx="1" fill="#ea580c"/>
+  <!-- Fried Cashews / Cumin -->
+  <path d="M 150,90 Q 158,86 164,92" stroke="#b45309" stroke-width="2.5" fill="none"/>
+  <line x1="120" y1="102" x2="128" y2="105" stroke="#78350f" stroke-width="1.5"/>
+  <line x1="175" y1="112" x2="183" y2="114" stroke="#78350f" stroke-width="1.5"/>
+  <text x="160" y="200" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#15803d" text-anchor="middle">Vegetable Pulao</text>
+</svg>

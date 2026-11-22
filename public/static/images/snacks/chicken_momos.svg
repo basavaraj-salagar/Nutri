@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs>
+    <radialGradient id="momoG" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="70%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#cbd5e1"/>
+    </radialGradient>
+    <filter id="nsh3"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.2"/></filter>
+  </defs>
+  <rect width="320" height="220" fill="#fff7ed"/>
+  <!-- Bamboo steamer / Plate -->
+  <ellipse cx="160" cy="135" rx="115" ry="50" fill="#b45309" filter="url(#nsh3)"/>
+  <ellipse cx="160" cy="132" rx="108" ry="44" fill="#fef3c7"/>
+  <!-- 3 Momos -->
+  <g filter="url(#nsh3)">
+    <!-- Momo 1 -->
+    <path d="M 100,125 C 100,105 130,100 130,115 C 130,130 100,135 100,125 Z" fill="url(#momoG)"/>
+    <path d="M 110,108 Q 120,115 125,120" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <!-- Momo 2 -->
+    <path d="M 145,115 C 145,95 175,90 175,105 C 175,125 145,125 145,115 Z" fill="url(#momoG)"/>
+    <!-- Momo 3 -->
+    <path d="M 185,125 C 185,105 215,100 215,115 C 215,130 185,135 185,125 Z" fill="url(#momoG)"/>
+  </g>
+  <!-- Spicy Red Chutney -->
+  <circle cx="160" cy="142" r="16" fill="#ffffff" filter="url(#nsh3)"/>
+  <circle cx="160" cy="142" r="12" fill="#dc2626"/>
+  <text x="160" y="202" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#c2410c" text-anchor="middle">Steamed Chicken Momos</text>
+</svg>

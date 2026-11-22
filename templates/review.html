@@ -17,7 +17,7 @@
     {% if image_filename %}
         <div style="margin-bottom: 1.5rem; text-align: center;">
             <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">Uploaded Meal Photo:</p>
-            <img src="{{ url_for('static', filename='uploads/' + image_filename) }}" alt="Uploaded Meal" style="max-height: 220px; border-radius: 8px; border: 2px solid var(--border); box-shadow: var(--shadow);">
+            <img src="{{ url_for('uploaded_file', filename=image_filename) }}" alt="Uploaded Meal" style="max-height: 220px; border-radius: 8px; border: 2px solid var(--border); box-shadow: var(--shadow);" onerror="this.onerror=null; this.src='/static/uploads/{{ image_filename }}';">
         </div>
     {% endif %}
 
