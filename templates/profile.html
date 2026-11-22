@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile & Targets - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>👤 Step 1: User Profile & Goals</h1>
+    <p>Configure your age, height, weight, and fitness targets to calculate your personalized daily nutrition targets.</p>
+</div>
+
+<div class="grid-2">
+    <!-- Left Column: Profile Edit Form -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">📝 Profile Information</h2>
+        </div>
+        <form method="POST" action="{{ url_for('profile_view') }}">
+            <div class="form-group">
+                <label for="name">Your Name</label>
+                <input type="text" id="name" name="name" class="form-control" value="{{ profile.name }}" required>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="age">Age (years)</label>
+                    <input type="number" id="age" name="age" class="form-control" min="10" max="120" value="{{ profile.age }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" class="form-control" required>
+                        <option value="male" {% if profile.gender == 'male' %}selected{% endif %}>Male</option>
+                        <option value="female" {% if profile.gender == 'female' %}selected{% endif %}>Female</option>
+                        <option value="other" {% if profile.gender == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="height_cm">Height (cm)</label>
+                    <input type="number" step="0.1" id="height_cm" name="height_cm" class="form-control" min="50" max="250" value="{{ profile.height_cm }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="weight_kg">Weight (kg)</label>
+                    <input type="number" step="0.1" id="weight_kg" name="weight_kg" class="form-control" min="20" max="300" value="{{ profile.weight_kg }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="activity_level">Daily Activity Level</label>
+                <select id="activity_level" name="activity_level" class="form-control" required>
+                    <option value="sedentary" {% if profile.activity_level == 'sedentary' %}selected{% endif %}>Sedentary (Little or no exercise, desk job)</option>
+                    <option value="lightly_active" {% if profile.activity_level == 'lightly_active' %}selected{% endif %}>Lightly Active (Light exercise 1-3 days/week)</option>
+                    <option value="moderately_active" {% if profile.activity_level == 'moderately_active' %}selected{% endif %}>Moderately Active (Moderate exercise 3-5 days/week)</option>
+                    <option value="very_active" {% if profile.activity_level == 'very_active' %}selected{% endif %}>Very Active (Hard exercise 6-7 days/week)</option>
+                </select>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="goal">Fitness Goal</label>
+                    <select id="goal" name="goal" class="form-control" required>
+                        <option value="weight_loss" {% if profile.goal == 'weight_loss' %}selected{% endif %}>🔥 Weight Loss (-500 kcal)</option>
+                        <option value="maintenance" {% if profile.goal == 'maintenance' %}selected{% endif %}>⚖️ Maintenance (Maintain weight)</option>
+                        <option value="muscle_gain" {% if profile.goal == 'muscle_gain' %}selected{% endif %}>💪 Muscle Gain (+350 kcal)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="diet_preference">Dietary Preference</label>
+                    <select id="diet_preference" name="diet_preference" class="form-control" required>
+                        <option value="all" {% if profile.diet_preference == 'all' %}selected{% endif %}>Omnivore (Everything)</option>
+                        <option value="vegetarian" {% if profile.diet_preference == 'vegetarian' %}selected{% endif %}>Vegetarian</option>
+                        <option value="vegan" {% if profile.diet_preference == 'vegan' %}selected{% endif %}>Vegan</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                💾 Save Profile & Recalculate Targets
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column: Current Computed Targets -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">🎯 Calculated Daily Targets</h2>
+            </div>
+            
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem;">
+                Formulas applied: <strong>Mifflin-St Jeor</strong> BMR &bull; Activity TDEE Multiplier &bull; Macro Ratio Optimization.
+            </p>
+
+            <div class="grid-2">
+                <div class="metric-box">
+                    <span class="metric-label">Daily Calories</span>
+                    <div class="metric-value">{{ profile.daily_calorie_target|round|int }}</div>
+                    <span class="metric-sub">kcal / day</span>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">Target Protein</span>
+                    <div class="metric-value" style="color: var(--secondary);">{{ profile.daily_protein_target|round(1) }}g</div>
+                    <span class="metric-sub">muscle repair & satiety</span>
+                </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 1rem;">
+                <div class="metric-box">
+                    <span class="metric-label">Target Carbs</span>
+                    <div class="metric-value" style="color: #3b82f6;">{{ profile.daily_carb_target|round(1) }}g</div>
+                    <span class="metric-sub">energy source</span>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">Target Healthy Fats</span>
+                    <div class="metric-value" style="color: #8b5cf6;">{{ profile.daily_fat_target|round(1) }}g</div>
+                    <span class="metric-sub">hormonal health</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; background-color: var(--primary-light); border-radius: 8px; font-size: 0.9rem; color: var(--primary-dark);">
+                💡 <strong>Tip for {{ profile.name }}:</strong> 
+                {% if profile.goal == 'weight_loss' %}
+                    With your weight loss target of {{ profile.daily_calorie_target|round|int }} kcal/day, focus on high-protein foods like grilled chicken, eggs, and lentils to stay full.
+                {% elif profile.goal == 'muscle_gain' %}
+                    For muscle gain, ensure you hit at least {{ profile.daily_protein_target|round(1) }}g of protein every day along with regular resistance training!
+                {% else %}
+                    You are in maintenance mode. Aim for consistency across your three main meals and hydration.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

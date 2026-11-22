@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs>
+    <radialGradient id="rotiGrad" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#fed7aa"/><stop offset="70%" stop-color="#fcd34d"/><stop offset="100%" stop-color="#d97706"/>
+    </radialGradient>
+    <filter id="rSh"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.18"/></filter>
+  </defs>
+  <rect width="320" height="220" fill="#fefce8"/>
+  <!-- Wooden Plate / Cloth -->
+  <ellipse cx="160" cy="130" rx="125" ry="60" fill="#e2e8f0"/>
+  <!-- Chapati 1 (under) -->
+  <g filter="url(#rSh)">
+    <ellipse cx="150" cy="125" rx="75" ry="42" fill="#d97706"/>
+    <ellipse cx="150" cy="123" rx="72" ry="40" fill="url(#rotiGrad)"/>
+    <circle cx="130" cy="120" r="4" fill="#b45309" opacity="0.6"/>
+  </g>
+  <!-- Chapati 2 (top slightly puffed) -->
+  <g filter="url(#rSh)">
+    <ellipse cx="168" cy="115" rx="75" ry="42" fill="#b45309"/>
+    <ellipse cx="168" cy="113" rx="72" ry="40" fill="url(#rotiGrad)"/>
+    <!-- Roasted Brown Spots -->
+    <ellipse cx="145" cy="105" rx="6" ry="3" fill="#92400e" opacity="0.7"/>
+    <ellipse cx="190" cy="110" rx="8" ry="4" fill="#92400e" opacity="0.75"/>
+    <circle cx="170" cy="120" r="3" fill="#78350f" opacity="0.7"/>
+    <circle cx="155" cy="115" r="4" fill="#b45309" opacity="0.6"/>
+    <circle cx="205" cy="116" r="3" fill="#92400e" opacity="0.6"/>
+  </g>
+  <text x="160" y="198" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#b45309" text-anchor="middle">Fresh Whole Wheat Chapati</text>
+</svg>

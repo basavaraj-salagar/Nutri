@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Veg & Non-Veg Meals Menu - NutriTrack{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1>🍽️ NutriTrack Meals & Dinner Menu</h1>
+        <p>Nutritious, authentic Indian vegetarian meals, hearty non-veg dishes, and healthy dinner specials. Know your exact calories & macros!</p>
+    </div>
+
+    <!-- Quick Diary Tracker Widget -->
+    <div class="card" style="padding: 0.75rem 1.25rem; margin-bottom: 0; min-width: 280px; background: #ffffff; border: 1.5px solid var(--border);">
+        <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">
+            Today's Diary Status ({{ today_date }})
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: baseline;">
+            <div>
+                <span id="header_cal_display" style="font-size: 1.35rem; font-weight: 700; color: var(--primary-dark);">{{ daily_summary.total_calories|round|int }}</span>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">/ {{ daily_summary.target_calories|round|int }} kcal</span>
+            </div>
+            <a href="{{ url_for('summary_view') }}" class="btn-outline" style="padding: 0.3rem 0.65rem; font-size: 0.8rem; border-radius: 6px; text-decoration: none;">
+                📊 View History
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toast Notification Container -->
+<div id="meal_toast" class="toast-container" style="display: none;">
+    <div class="toast-content">
+        <span class="toast-icon">✅</span>
+        <div class="toast-text">
+            <strong id="toast_title">Meal Added!</strong>
+            <p id="toast_msg" style="margin: 0; font-size: 0.85rem; color: #166534;"></p>
+        </div>
+        <a href="{{ url_for('summary_view') }}" class="toast-link">View Diary &rarr;</a>
+    </div>
+</div>
+
+<!-- Category Switching Tabs & Search -->
+<div class="card" style="margin-bottom: 1.5rem; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        
+        <!-- Category Switching Tabs -->
+        <div class="snack-tabs" role="tablist">
+            <button type="button" class="snack-tab-btn active" id="tab_all" onclick="filterCategory('all', this)" role="tab" aria-selected="true">
+                🍽️ All Meals <span class="tab-count" id="count_all">{{ all_meals|length }}</span>
+            </button>
+            <button type="button" class="snack-tab-btn veg-tab" id="tab_veg" onclick="filterCategory('vegetarian', this)" role="tab" aria-selected="false">
+                🥗 Vegetarian Meals <span class="tab-count" id="count_veg">{{ veg_meals|length }}</span>
+            </button>
+            <button type="button" class="snack-tab-btn nonveg-tab" id="tab_nonveg" onclick="filterCategory('non-veg', this)" role="tab" aria-selected="false">
+                🍗 Non-Vegetarian Meals <span class="tab-count" id="count_nonveg">{{ non_veg_meals|length }}</span>
+            </button>
+            <button type="button" class="snack-tab-btn" id="tab_dinner" onclick="filterCategory('dinner', this)" role="tab" aria-selected="false" style="border-color: #8b5cf6; color: #6d28d9;">
+                🌙 Dinner Specials <span class="tab-count" id="count_dinner">{{ dinner_meals|length }}</span>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div style="display: flex; gap: 0.5rem; flex: 1; max-width: 360px;">
+            <div style="position: relative; width: 100%;">
+                <input type="text" id="meal_search" class="form-control" placeholder="Search meals (e.g. biryani, paneer, khichdi)..." oninput="handleSearch()" style="padding-left: 2.2rem; padding-right: 2rem;">
+                <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.95rem;">🔍</span>
+                <button type="button" id="search_clear" onclick="clearSearch()" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; font-size: 1rem;">&times;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Filter Status & Disclaimer -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); flex-wrap: wrap; gap: 0.5rem;">
+        <div style="font-size: 0.88rem; color: var(--text-dark); font-weight: 500;">
+            Showing: <strong id="filter_label" style="color: var(--primary);">All Meals</strong> 
+            (<span id="visible_count">{{ all_meals|length }}</span> items found)
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic;">
+            ⚠️ Nutrition values are estimated values; actual values vary by recipe and serving size.
+        </div>
+    </div>
+</div>
+
+<!-- Meals Grid -->
+<div id="meals_container" class="snacks-grid">
+    {% for meal in all_meals %}
+    <div class="snack-card item-card {% if meal.diet_type in ['vegetarian', 'vegan'] %}theme-veg{% else %}theme-nonveg{% endif %}"
+         data-id="{{ meal.id }}"
+         data-name="{{ meal.name|lower }}"
+         data-diet="{{ meal.diet_type }}"
+         data-is-dinner="{% if 'dinner' in meal.category|lower or meal.name in ['Palak Paneer', 'Dal Makhani', 'Butter Chicken', 'Chicken Korma', 'Moong Dal Khichdi', 'Tandoori Roti Basket (3 pcs)', 'Methi Thepla (3 pcs)', 'Grilled Fish with Steamed Veggies', 'Paneer Butter Masala', 'Veg Biryani', 'Chicken Biryani'] %}true{% else %}false{% endif %}"
+         data-cal="{{ meal.calories }}"
+         data-pro="{{ meal.protein }}"
+         data-carb="{{ meal.carbs }}"
+         data-fat="{{ meal.fat }}">
+
+        <!-- Image & Badges -->
+        <div class="snack-image-wrap">
+            <img src="{{ meal.image_url or url_for('static', filename='images/meals/' + meal.name|lower|replace(' ', '_') + '.svg') }}" 
+                 alt="{{ meal.name }}" 
+                 class="snack-img"
+                 loading="lazy"
+                 onerror="this.onerror=null; this.src='/static/images/meals/dal_rice.svg';">
+            
+            <div class="diet-badge-pill {% if meal.diet_type in ['vegetarian', 'vegan'] %}pill-veg{% else %}pill-nonveg{% endif %}">
+                {% if meal.diet_type in ['vegetarian', 'vegan'] %}
+                    🌱 Veg
+                {% else %}
+                    🍗 Non-Veg
+                {% endif %}
+            </div>
+
+            <!-- Price Tag Pill -->
+            <div style="position: absolute; bottom: 0.65rem; right: 0.65rem; background: #ffffff; padding: 0.25rem 0.65rem; border-radius: 999px; font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); box-shadow: 0 2px 5px rgba(0,0,0,0.15);">
+                ₹{{ meal.price|round|int if meal.price else 99 }}
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="snack-card-body">
+            <div class="snack-title-row">
+                <h3 class="snack-title">{{ meal.name }}</h3>
+                <span class="snack-serving-badge">{{ meal.serving_size }} {{ meal.serving_unit }}</span>
+            </div>
+
+            <!-- 4 Macro Pills -->
+            <div class="snack-macro-grid">
+                <div class="macro-pill pill-cal" title="Calories">
+                    <span class="macro-val">{{ meal.calories|round|int }}</span>
+                    <span class="macro-lbl">kcal (est)</span>
+                </div>
+                <div class="macro-pill pill-pro" title="Protein">
+                    <span class="macro-val">{{ meal.protein }}g</span>
+                    <span class="macro-lbl">Protein</span>
+                </div>
+                <div class="macro-pill pill-carb" title="Carbohydrates">
+                    <span class="macro-val">{{ meal.carbs }}g</span>
+                    <span class="macro-lbl">Carbs</span>
+                </div>
+                <div class="macro-pill pill-fat" title="Healthy Fat">
+                    <span class="macro-val">{{ meal.fat }}g</span>
+                    <span class="macro-lbl">Fat</span>
+                </div>
+            </div>
+
+            <!-- Action Area: Portion + Add to Meals + Add to Delivery -->
+            <div class="snack-action-row" style="flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; width: 100%;">
+                    <div class="qty-control">
+                        <button type="button" class="qty-btn" onclick="adjustQty({{ meal.id }}, -1)">-</button>
+                        <input type="number" id="qty_{{ meal.id }}" class="qty-field" value="1" min="1" max="10" readonly>
+                        <button type="button" class="qty-btn" onclick="adjustQty({{ meal.id }}, 1)">+</button>
+                    </div>
+
+                    <button type="button" 
+                            class="btn btn-add-meal {% if meal.diet_type in ['vegetarian', 'vegan'] %}btn-veg-add{% else %}btn-nonveg-add{% endif %}" 
+                            id="btn_add_{{ meal.id }}" 
+                            style="flex: 1;"
+                            onclick="addToMeals({{ meal.id }}, '{{ meal.name }}')">
+                        <span class="btn-icon">➕</span>
+                        <span class="btn-text">Add to Diary</span>
+                    </button>
+                </div>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        style="width: 100%; padding: 0.45rem 0.75rem; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;"
+                        onclick="addToDeliveryCart({{ meal.id }}, '{{ meal.name }}', {{ meal.price|round|int if meal.price else 99 }}, {{ meal.calories }}, {{ meal.protein }}, {{ meal.carbs }}, {{ meal.fat }}, '{{ meal.image_url or '' }}')">
+                    <span>🛵</span>
+                    <span>Order for Delivery (₹{{ meal.price|round|int if meal.price else 99 }})</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Empty State -->
+<div id="no_results" class="card" style="display: none; text-align: center; padding: 3rem 1.5rem; margin-top: 1rem;">
+    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🍛</div>
+    <h3 style="color: var(--primary-dark); font-size: 1.3rem; margin-bottom: 0.5rem;">No meals found</h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem;">
+        No meal items matched your current filter or search criteria.
+    </p>
+    <button type="button" class="btn btn-primary" onclick="resetFilters()">Reset All Filters</button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFilter = 'all';
+
+function filterCategory(category, buttonEl) {
+    currentFilter = category;
+    document.querySelectorAll('.snack-tab-btn').forEach(btn => btn.classList.remove('active'));
+    if (buttonEl) buttonEl.classList.add('active');
+
+    const labelMap = {
+        'all': 'All Meals',
+        'vegetarian': '🥗 Vegetarian Meals',
+        'non-veg': '🍗 Non-Vegetarian Meals',
+        'dinner': '🌙 Dinner Specials'
+    };
+    document.getElementById('filter_label').innerText = labelMap[category] || 'All Meals';
+
+    applyFilters();
+}
+
+function handleSearch() {
+    const searchInput = document.getElementById('meal_search');
+    const clearBtn = document.getElementById('search_clear');
+    if (searchInput.value.trim().length > 0) {
+        clearBtn.style.display = 'block';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+    applyFilters();
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('meal_search');
+    searchInput.value = '';
+    document.getElementById('search_clear').style.display = 'none';
+    searchInput.focus();
+    applyFilters();
+}
+
+function resetFilters() {
+    clearSearch();
+    filterCategory('all', document.getElementById('tab_all'));
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('meal_search').value.toLowerCase().trim();
+    const cards = document.querySelectorAll('#meals_container .item-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const diet = card.getAttribute('data-diet');
+        const name = card.getAttribute('data-name');
+        const isDinner = card.getAttribute('data-is-dinner') === 'true';
+
+        let categoryMatch = false;
+        if (currentFilter === 'all') {
+            categoryMatch = true;
+        } else if (currentFilter === 'vegetarian') {
+            categoryMatch = (diet === 'vegetarian' || diet === 'vegan');
+        } else if (currentFilter === 'non-veg') {
+            categoryMatch = (diet === 'non-veg' || diet === 'all');
+        } else if (currentFilter === 'dinner') {
+            categoryMatch = isDinner;
+        }
+
+        const searchMatch = !searchTerm || name.includes(searchTerm);
+
+        if (categoryMatch && searchMatch) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    document.getElementById('visible_count').innerText = visibleCount;
+    const noResults = document.getElementById('no_results');
+    if (visibleCount === 0) {
+        noResults.style.display = 'block';
+    } else {
+        noResults.style.display = 'none';
+    }
+}
+
+function adjustQty(mealId, delta) {
+    const input = document.getElementById('qty_' + mealId);
+    let val = parseInt(input.value, 10) || 1;
+    val = Math.max(1, Math.min(10, val + delta));
+    input.value = val;
+}
+
+function addToMeals(mealId, mealName) {
+    const qtyInput = document.getElementById('qty_' + mealId);
+    const qty = parseFloat(qtyInput.value) || 1.0;
+    const btn = document.getElementById('btn_add_' + mealId);
+
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span><span>Adding...</span>';
+
+    fetch('{{ url_for("add_snack_api") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            food_id: mealId,
+            quantity: qty,
+            meal_type: currentFilter === 'dinner' ? 'Dinner' : 'Lunch',
+            meal_date: '{{ today_date }}'
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">➕</span><span class="btn-text">Add to Diary</span>';
+
+        if (data.success) {
+            showToast('✅ ' + mealName + ' Added!', data.message);
+            const calDisp = document.getElementById('header_cal_display');
+            if (calDisp && data.summary) {
+                calDisp.innerText = Math.round(data.summary.total_calories);
+            }
+        } else {
+            alert('Error adding meal: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">➕</span><span class="btn-text">Add to Diary</span>';
+        alert('Network error adding meal.');
+    });
+}
+
+function addToDeliveryCart(foodId, name, price, cals, pro, carb, fat, img) {
+    try {
+        let cart = [];
+        const raw = localStorage.getItem('nutritrack_delivery_cart');
+        if (raw) cart = JSON.parse(raw);
+
+        const existing = cart.find(i => i.food_id === foodId);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({
+                food_id: foodId,
+                name: name,
+                price: price,
+                calories: cals,
+                protein: pro,
+                carbs: carb,
+                fat: fat,
+                quantity: 1,
+                image_url: img
+            });
+        }
+        localStorage.setItem('nutritrack_delivery_cart', JSON.stringify(cart));
+        syncGlobalCart();
+        showToast('🛵 Added to Delivery Cart', `${name} (₹${price}) added to your cart.`);
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function showToast(title, msg) {
+    const toast = document.getElementById('meal_toast');
+    document.getElementById('toast_title').innerText = title;
+    document.getElementById('toast_msg').innerText = msg;
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 4000);
+}
+</script>
+{% endblock %}

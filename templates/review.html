@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Review & Confirm Meal - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🤖 Step 3 & 5: AI Food Recognition & User Review</h1>
+    <p>Review the AI-detected food items, adjust portion quantities, and confirm meal logging to your personal diary.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🔍 AI Recognition Results</h2>
+        <span class="badge badge-all">{{ detected_items|length }} items identified</span>
+    </div>
+
+    {% if image_filename %}
+        <div style="margin-bottom: 1.5rem; text-align: center;">
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">Uploaded Meal Photo:</p>
+            <img src="{{ url_for('static', filename='uploads/' + image_filename) }}" alt="Uploaded Meal" style="max-height: 220px; border-radius: 8px; border: 2px solid var(--border); box-shadow: var(--shadow);">
+        </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('save_meal_view') }}">
+        <input type="hidden" name="meal_date" value="{{ today_date }}">
+        <input type="hidden" name="meal_type" value="{{ meal_type }}">
+        <input type="hidden" name="image_path" value="{{ image_filename or '' }}">
+
+        <div style="margin-bottom: 1.5rem; display: flex; gap: 1.5rem; align-items: center; background: #f8fafc; padding: 1rem; border-radius: 8px;">
+            <div>
+                <label style="font-weight: 600; font-size: 0.9rem;">Date:</label>
+                <input type="date" name="meal_date_display" value="{{ today_date }}" class="form-control" style="width: auto; display: inline-block; padding: 0.4rem 0.6rem;" disabled>
+            </div>
+            <div>
+                <label style="font-weight: 600; font-size: 0.9rem;">Category:</label>
+                <select name="confirmed_meal_type" class="form-control" style="width: auto; display: inline-block; padding: 0.4rem 0.6rem;">
+                    <option value="Breakfast" {% if meal_type == 'Breakfast' %}selected{% endif %}>Breakfast</option>
+                    <option value="Lunch" {% if meal_type == 'Lunch' %}selected{% endif %}>Lunch</option>
+                    <option value="Dinner" {% if meal_type == 'Dinner' %}selected{% endif %}>Dinner</option>
+                    <option value="Snack" {% if meal_type == 'Snack' %}selected{% endif %}>Snack</option>
+                </select>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Food Item</th>
+                    <th>Portion / Quantity</th>
+                    <th>Calories</th>
+                    <th>Protein</th>
+                    <th>Carbs</th>
+                    <th>Fat</th>
+                    <th>AI Confidence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in detected_items %}
+                <tr class="item-row" data-index="{{ loop.index0 }}"
+                    data-base-cal="{{ (item.calories / item.quantity)|round(2) if item.quantity > 0 else item.calories }}"
+                    data-base-pro="{{ (item.protein / item.quantity)|round(2) if item.quantity > 0 else item.protein }}"
+                    data-base-carb="{{ (item.carbs / item.quantity)|round(2) if item.quantity > 0 else item.carbs }}"
+                    data-base-fat="{{ (item.fat / item.quantity)|round(2) if item.quantity > 0 else item.fat }}">
+                    
+                    <td>
+                        <strong style="color: var(--primary-dark);">{{ item.name }}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ item.portion_note }}</div>
+                        <input type="hidden" name="food_name_{{ loop.index0 }}" value="{{ item.name }}">
+                        <input type="hidden" name="unit_{{ loop.index0 }}" value="{{ item.unit }}">
+                    </td>
+
+                    <td style="width: 170px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" step="0.25" min="0.25" max="20" 
+                                   name="quantity_{{ loop.index0 }}" 
+                                   id="qty_{{ loop.index0 }}" 
+                                   value="{{ item.quantity }}" 
+                                   class="form-control qty-input" 
+                                   style="width: 80px; padding: 0.4rem;"
+                                   onchange="recalculateRow({{ loop.index0 }})"
+                                   onkeyup="recalculateRow({{ loop.index0 }})">
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">{{ item.unit }}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span id="cal_display_{{ loop.index0 }}" style="font-weight: 700; color: var(--primary);">{{ item.calories }}</span> kcal
+                        <input type="hidden" name="calories_{{ loop.index0 }}" id="cal_input_{{ loop.index0 }}" value="{{ item.calories }}">
+                    </td>
+
+                    <td>
+                        <span id="pro_display_{{ loop.index0 }}">{{ item.protein }}</span>g
+                        <input type="hidden" name="protein_{{ loop.index0 }}" id="pro_input_{{ loop.index0 }}" value="{{ item.protein }}">
+                    </td>
+
+                    <td>
+                        <span id="carb_display_{{ loop.index0 }}">{{ item.carbs }}</span>g
+                        <input type="hidden" name="carbs_{{ loop.index0 }}" id="carb_input_{{ loop.index0 }}" value="{{ item.carbs }}">
+                    </td>
+
+                    <td>
+                        <span id="fat_display_{{ loop.index0 }}">{{ item.fat }}</span>g
+                        <input type="hidden" name="fat_{{ loop.index0 }}" id="fat_input_{{ loop.index0 }}" value="{{ item.fat }}">
+                    </td>
+
+                    <td>
+                        <span class="badge badge-vegan">{{ item.confidence }}% AI match</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Live Totals for this Meal -->
+        <div style="margin-top: 1.5rem; padding: 1.25rem; background: var(--primary-light); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div>
+                <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary-dark);">Meal Total:</span>
+                <span id="total_meal_cal" style="font-size: 1.4rem; font-weight: 700; color: var(--primary-dark); margin-left: 0.5rem;">0</span> kcal
+                <span style="margin-left: 1rem; font-size: 0.9rem; color: #166534;">
+                    (P: <strong id="total_meal_pro">0</strong>g &bull; C: <strong id="total_meal_carb">0</strong>g &bull; F: <strong id="total_meal_fat">0</strong>g)
+                </span>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                <a href="{{ url_for('upload_view') }}" class="btn btn-outline">Discard & Back</a>
+                <button type="submit" class="btn btn-primary">
+                    ✅ Confirm & Log to Daily Diary
+                </button>
+            </div>
+        </div>
+
+        <input type="hidden" name="total_items" value="{{ detected_items|length }}">
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function recalculateRow(index) {
+    const row = document.querySelector(`.item-row[data-index="${index}"]`);
+    if (!row) return;
+
+    const baseCal = parseFloat(row.dataset.baseCal) || 0;
+    const basePro = parseFloat(row.dataset.basePro) || 0;
+    const baseCarb = parseFloat(row.dataset.baseCarb) || 0;
+    const baseFat = parseFloat(row.dataset.baseFat) || 0;
+
+    const qty = parseFloat(document.getElementById(`qty_${index}`).value) || 0;
+
+    const newCal = (baseCal * qty).toFixed(1);
+    const newPro = (basePro * qty).toFixed(1);
+    const newCarb = (baseCarb * qty).toFixed(1);
+    const newFat = (baseFat * qty).toFixed(1);
+
+    document.getElementById(`cal_display_${index}`).innerText = newCal;
+    document.getElementById(`cal_input_${index}`).value = newCal;
+
+    document.getElementById(`pro_display_${index}`).innerText = newPro;
+    document.getElementById(`pro_input_${index}`).value = newPro;
+
+    document.getElementById(`carb_display_${index}`).innerText = newCarb;
+    document.getElementById(`carb_input_${index}`).value = newCarb;
+
+    document.getElementById(`fat_display_${index}`).innerText = newFat;
+    document.getElementById(`fat_input_${index}`).value = newFat;
+
+    updateGrandTotal();
+}
+
+function updateGrandTotal() {
+    let totCal = 0, totPro = 0, totCarb = 0, totFat = 0;
+    document.querySelectorAll('.item-row').forEach(row => {
+        const idx = row.dataset.index;
+        totCal += parseFloat(document.getElementById(`cal_input_${idx}`).value) || 0;
+        totPro += parseFloat(document.getElementById(`pro_input_${idx}`).value) || 0;
+        totCarb += parseFloat(document.getElementById(`carb_input_${idx}`).value) || 0;
+        totFat += parseFloat(document.getElementById(`fat_input_${idx}`).value) || 0;
+    });
+
+    document.getElementById('total_meal_cal').innerText = totCal.toFixed(1);
+    document.getElementById('total_meal_pro').innerText = totPro.toFixed(1);
+    document.getElementById('total_meal_carb').innerText = totCarb.toFixed(1);
+    document.getElementById('total_meal_fat').innerText = totFat.toFixed(1);
+}
+
+// Initial calculation on load
+window.addEventListener('DOMContentLoaded', updateGrandTotal);
+</script>
+{% endblock %}

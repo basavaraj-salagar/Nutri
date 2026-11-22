@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs><filter id="sh11"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.18"/></filter></defs>
+  <rect width="320" height="220" fill="#f0fdf4"/>
+  <ellipse cx="160" cy="135" rx="120" ry="50" fill="#e2e8f0" filter="url(#sh11)"/>
+  <!-- Dhokla Cubes -->
+  <g filter="url(#sh11)">
+    <!-- Cube 1 -->
+    <polygon points="100,105 135,90 155,108 120,125" fill="#fef08a"/>
+    <polygon points="100,105 120,125 120,145 100,125" fill="#eab308"/>
+    <polygon points="120,125 155,108 155,128 120,145" fill="#facc15"/>
+    <!-- Cube 2 -->
+    <polygon points="150,110 185,95 205,113 170,130" fill="#fef08a"/>
+    <polygon points="150,110 170,130 170,150 150,130" fill="#eab308"/>
+    <polygon points="170,130 205,113 205,133 170,150" fill="#facc15"/>
+  </g>
+  <!-- Mustard & Green Chili tempering -->
+  <circle cx="130" cy="108" r="1.5" fill="#0f172a"/><circle cx="145" cy="102" r="1.5" fill="#0f172a"/>
+  <circle cx="178" cy="112" r="1.5" fill="#0f172a"/>
+  <path d="M 125,98 Q 145,95 150,105" stroke="#16a34a" stroke-width="2.5" fill="none"/>
+  <text x="160" y="202" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#15803d" text-anchor="middle">Khaman Dhokla</text>
+</svg>

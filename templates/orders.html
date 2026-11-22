@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}My Delivery Orders - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1>📦 My Delivery Orders History</h1>
+        <p>Review all your past and active healthy meal deliveries, track live orders, and check nutritional logs.</p>
+    </div>
+
+    <div>
+        <a href="{{ url_for('delivery_view') }}" class="btn btn-primary">
+            🛵 Order Healthy Food Now
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🧾 Orders Placed ({{ orders|length }})</h2>
+    </div>
+
+    {% if orders %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Date & Time</th>
+                    <th>Delivery Slot</th>
+                    <th>Nutrition Delivered</th>
+                    <th>Total Paid</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in orders %}
+                <tr>
+                    <td>
+                        <strong style="color: var(--primary-dark);">{{ o.order_number }}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ o.customer_name }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.9rem;">{{ o.created_at[:16] if o.created_at else 'Recent' }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ o.payment_method }}</div>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.85rem; font-weight: 500;">{{ o.delivery_slot }}</span>
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; color: var(--primary);">{{ o.total_calories|round|int }}</span> kcal
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            P: {{ o.total_protein }}g &bull; C: {{ o.total_carbs }}g &bull; F: {{ o.total_fat }}g
+                        </div>
+                    </td>
+                    <td>
+                        <strong style="font-size: 1.05rem; color: var(--primary-dark);">₹{{ o.total_price|round|int }}</strong>
+                    </td>
+                    <td>
+                        <span class="badge {% if o.status == 'Delivered' %}badge-vegan{% elif o.status == 'Out for Delivery' %}badge-vegetarian{% else %}badge-all{% endif %}">
+                            {{ o.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('track_order_view', order_id=o.id) }}" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.82rem;">
+                            Track Live &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3.5rem 1rem; color: var(--text-muted);">
+        <p style="font-size: 3rem; margin-bottom: 0.5rem;">🛵</p>
+        <h3 style="color: var(--text-dark); margin-bottom: 0.25rem;">No orders placed yet!</h3>
+        <p style="font-size: 0.9rem; margin-bottom: 1.25rem;">Explore our healthy food delivery menu and have balanced meals delivered to your doorstep.</p>
+        <a href="{{ url_for('delivery_view') }}" class="btn btn-primary">
+            Browse Delivery Menu
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

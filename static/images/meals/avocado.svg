@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs>
+    <radialGradient id="avoG" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#fef08a"/><stop offset="70%" stop-color="#a3e635"/><stop offset="100%" stop-color="#15803d"/>
+    </radialGradient>
+    <radialGradient id="seedG" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#a16207"/><stop offset="60%" stop-color="#78350f"/><stop offset="100%" stop-color="#451a03"/>
+    </radialGradient>
+    <filter id="avSh"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.2"/></filter>
+  </defs>
+  <rect width="320" height="220" fill="#f0fdf4"/>
+  <ellipse cx="160" cy="155" rx="75" ry="25" fill="#cbd5e1" opacity="0.6"/>
+  <!-- Avocado Half -->
+  <g filter="url(#avSh)">
+    <!-- Dark Skin -->
+    <path d="M 160,65 C 130,65 110,95 110,135 C 110,165 130,175 160,175 C 190,175 210,165 210,135 C 210,95 190,65 160,65 Z" fill="#14532d"/>
+    <!-- Flesh -->
+    <path d="M 160,70 C 135,70 116,98 116,135 C 116,162 135,170 160,170 C 185,170 204,162 204,135 C 204,98 185,70 160,70 Z" fill="url(#avoG)"/>
+    <!-- Seed -->
+    <circle cx="160" cy="135" r="24" fill="url(#seedG)"/>
+  </g>
+  <text x="160" y="202" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#15803d" text-anchor="middle">Ripe Fresh Avocado</text>
+</svg>

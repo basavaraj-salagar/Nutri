@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="100%" height="100%">
+  <defs><filter id="psSh"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.18"/></filter></defs>
+  <rect width="320" height="220" fill="#f0fdf4"/>
+  <ellipse cx="160" cy="160" rx="60" ry="20" fill="#cbd5e1" opacity="0.6"/>
+  <!-- Shaker Bottle -->
+  <g filter="url(#psSh)">
+    <rect x="125" y="75" width="70" height="90" rx="8" fill="#047857"/>
+    <!-- Transparent Measurement Window with Shake inside -->
+    <rect x="135" y="85" width="50" height="70" rx="4" fill="#f8fafc"/>
+    <rect x="137" y="100" width="46" height="53" rx="2" fill="#78350f" opacity="0.85"/> <!-- Chocolate whey -->
+    <!-- Cap & Spout -->
+    <rect x="120" y="65" width="80" height="15" rx="4" fill="#065f46"/>
+    <rect x="150" y="55" width="20" height="12" rx="3" fill="#10b981"/>
+  </g>
+  <text x="160" y="202" font-family="'Segoe UI', Inter, sans-serif" font-size="14" font-weight="700" fill="#047857" text-anchor="middle">Whey Protein Shake</text>
+</svg>

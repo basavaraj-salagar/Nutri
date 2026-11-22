@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}Snacks Menu - NutriTrack{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1>🍿 NutriTrack Snacks Menu</h1>
+        <p>Explore healthy & delicious vegetarian and non-vegetarian snacks with nutritional estimates. Filter, search, and instantly add to your daily diary!</p>
+    </div>
+
+    <!-- Quick Diary Tracker Widget -->
+    <div class="card" style="padding: 0.75rem 1.25rem; margin-bottom: 0; min-width: 280px; background: #ffffff; border: 1.5px solid var(--border);">
+        <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">
+            Today's Diary Status ({{ today_date }})
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: baseline;">
+            <div>
+                <span id="header_cal_display" style="font-size: 1.35rem; font-weight: 700; color: var(--primary-dark);">{{ daily_summary.total_calories|round|int }}</span>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">/ {{ daily_summary.target_calories|round|int }} kcal</span>
+            </div>
+            <a href="{{ url_for('summary_view') }}" class="btn-outline" style="padding: 0.3rem 0.65rem; font-size: 0.8rem; border-radius: 6px; text-decoration: none;">
+                📊 View History
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toast Notification Container -->
+<div id="snack_toast" class="toast-container" style="display: none;">
+    <div class="toast-content">
+        <span class="toast-icon">✅</span>
+        <div class="toast-text">
+            <strong id="toast_title">Snack Added!</strong>
+            <p id="toast_msg" style="margin: 0; font-size: 0.85rem; color: #166534;"></p>
+        </div>
+        <a href="{{ url_for('summary_view') }}" class="toast-link">View Diary &rarr;</a>
+    </div>
+</div>
+
+<!-- Filter & Search Controls Bar -->
+<div class="card" style="margin-bottom: 1.5rem; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        
+        <!-- Category Switching Tabs -->
+        <div class="snack-tabs" role="tablist">
+            <button type="button" class="snack-tab-btn active" id="tab_all" onclick="filterCategory('all', this)" role="tab" aria-selected="true">
+                🍿 All Snacks <span class="tab-count" id="count_all">{{ all_snacks|length }}</span>
+            </button>
+            <button type="button" class="snack-tab-btn veg-tab" id="tab_veg" onclick="filterCategory('vegetarian', this)" role="tab" aria-selected="false">
+                🥗 Veg Snacks <span class="tab-count" id="count_veg">{{ veg_snacks|length }}</span>
+            </button>
+            <button type="button" class="snack-tab-btn nonveg-tab" id="tab_nonveg" onclick="filterCategory('non-veg', this)" role="tab" aria-selected="false">
+                🍗 Non-Veg Snacks <span class="tab-count" id="count_nonveg">{{ non_veg_snacks|length }}</span>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div style="display: flex; gap: 0.5rem; flex: 1; max-width: 360px;">
+            <div style="position: relative; width: 100%;">
+                <input type="text" id="snack_search" class="form-control" placeholder="Search snacks (e.g. samosa, momos, eggs)..." oninput="handleSearch()" style="padding-left: 2.2rem; padding-right: 2rem;">
+                <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.95rem;">🔍</span>
+                <button type="button" id="search_clear" onclick="clearSearch()" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; font-size: 1rem;">&times;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Filter Status & Disclaimer -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); flex-wrap: wrap; gap: 0.5rem;">
+        <div style="font-size: 0.88rem; color: var(--text-dark); font-weight: 500;">
+            Showing: <strong id="filter_label" style="color: var(--primary);">All Snacks</strong> 
+            (<span id="visible_count">{{ all_snacks|length }}</span> items found)
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic;">
+            ⚠️ Nutrition values are estimated values; actual values vary by recipe and serving size.
+        </div>
+    </div>
+</div>
+
+<!-- Snacks Grid -->
+<div id="snacks_container" class="snacks-grid">
+    {% for snack in all_snacks %}
+    <div class="snack-card item-card {% if snack.diet_type == 'vegetarian' %}theme-veg{% else %}theme-nonveg{% endif %}"
+         data-id="{{ snack.id }}"
+         data-name="{{ snack.name|lower }}"
+         data-diet="{{ snack.diet_type }}"
+         data-cal="{{ snack.calories }}"
+         data-pro="{{ snack.protein }}"
+         data-carb="{{ snack.carbs }}"
+         data-fat="{{ snack.fat }}">
+
+        <!-- Card Image Container -->
+        <div class="snack-image-wrap">
+            <img src="{{ snack.image_url or url_for('static', filename='images/snacks/' + snack.name|lower|replace(' ', '_') + '.svg') }}" 
+                 alt="{{ snack.name }}" 
+                 class="snack-img"
+                 loading="lazy"
+                 onerror="this.onerror=null; this.src='/static/images/snacks/samosa.svg';">
+            
+            <!-- Diet Badge -->
+            <div class="diet-badge-pill {% if snack.diet_type == 'vegetarian' %}pill-veg{% else %}pill-nonveg{% endif %}">
+                {% if snack.diet_type == 'vegetarian' %}
+                    🌱 Veg
+                {% else %}
+                    🍗 Non-Veg
+                {% endif %}
+            </div>
+
+            <!-- Price Tag Pill -->
+            <div style="position: absolute; bottom: 0.65rem; right: 0.65rem; background: #ffffff; padding: 0.25rem 0.65rem; border-radius: 999px; font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); box-shadow: 0 2px 5px rgba(0,0,0,0.15);">
+                ₹{{ snack.price|round|int if snack.price else 35 }}
+            </div>
+        </div>
+
+        <!-- Card Details -->
+        <div class="snack-card-body">
+            <div class="snack-title-row">
+                <h3 class="snack-title">{{ snack.name }}</h3>
+                <span class="snack-serving-badge">{{ snack.serving_size }} {{ snack.serving_unit }}</span>
+            </div>
+
+            <!-- Nutrition 4-Pill Grid -->
+            <div class="snack-macro-grid">
+                <div class="macro-pill pill-cal" title="Calories">
+                    <span class="macro-val">{{ snack.calories|round|int }}</span>
+                    <span class="macro-lbl">kcal (est)</span>
+                </div>
+                <div class="macro-pill pill-pro" title="Protein">
+                    <span class="macro-val">{{ snack.protein }}g</span>
+                    <span class="macro-lbl">Protein</span>
+                </div>
+                <div class="macro-pill pill-carb" title="Carbohydrates">
+                    <span class="macro-val">{{ snack.carbs }}g</span>
+                    <span class="macro-lbl">Carbs</span>
+                </div>
+                <div class="macro-pill pill-fat" title="Healthy Fat">
+                    <span class="macro-val">{{ snack.fat }}g</span>
+                    <span class="macro-lbl">Fat</span>
+                </div>
+            </div>
+
+            <!-- Action Area: Portion + Add to Meals Form -->
+            <div class="snack-action-row">
+                <div class="qty-control">
+                    <button type="button" class="qty-btn" onclick="adjustQty({{ snack.id }}, -1)">-</button>
+                    <input type="number" id="qty_{{ snack.id }}" class="qty-field" value="1" min="1" max="10" readonly>
+                    <button type="button" class="qty-btn" onclick="adjustQty({{ snack.id }}, 1)">+</button>
+                </div>
+
+                <button type="button" 
+                        class="btn btn-add-meal {% if snack.diet_type == 'vegetarian' %}btn-veg-add{% else %}btn-nonveg-add{% endif %}" 
+                        id="btn_add_{{ snack.id }}" 
+                        onclick="addToMeals({{ snack.id }}, '{{ snack.name }}')">
+                    <span class="btn-icon">➕</span>
+                    <span class="btn-text">Add to My Meals</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Empty Search / Filter State -->
+<div id="no_results" class="card" style="display: none; text-align: center; padding: 3rem 1.5rem; margin-top: 1rem;">
+    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🍿</div>
+    <h3 style="color: var(--primary-dark); font-size: 1.3rem; margin-bottom: 0.5rem;">No snacks found</h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem;">
+        No snack items matched your current filter or search criteria.
+    </p>
+    <button type="button" class="btn btn-outline" onclick="resetFilters()">Reset All Filters</button>
+</div>
+
+<!-- Bottom Navigation to Summary -->
+<div style="margin-top: 2.5rem; padding: 1.5rem; background: #ffffff; border-radius: var(--radius); border: 1.5px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h4 style="font-size: 1.1rem; color: var(--primary-dark); margin-bottom: 0.25rem;">Ready to view your full nutrition breakdown?</h4>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0;">Check your consumed calories, macronutrient balance, and AI coach recommendations.</p>
+    </div>
+    <a href="{{ url_for('summary_view') }}" class="btn btn-primary">
+        📊 Go to Daily Summary & Diary
+    </a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// State
+let currentCategory = 'all'; // 'all', 'vegetarian', 'non-veg'
+let currentSearch = '';
+
+// Category Switching with smooth transitions
+function filterCategory(category, buttonElement) {
+    currentCategory = category;
+
+    // Update active tab buttons
+    document.querySelectorAll('.snack-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+    });
+    buttonElement.classList.add('active');
+    buttonElement.setAttribute('aria-selected', 'true');
+
+    // Update filter label
+    const label = document.getElementById('filter_label');
+    if (category === 'vegetarian') {
+        label.innerText = '🥗 Vegetarian Snacks';
+        label.style.color = '#15803d';
+    } else if (category === 'non-veg') {
+        label.innerText = '🍗 Non-Vegetarian Snacks';
+        label.style.color = '#c2410c';
+    } else {
+        label.innerText = '🍿 All Snacks';
+        label.style.color = 'var(--primary)';
+    }
+
+    applyFilters();
+}
+
+// Search filtering
+function handleSearch() {
+    const input = document.getElementById('snack_search');
+    currentSearch = input.value.trim().toLowerCase();
+    
+    const clearBtn = document.getElementById('search_clear');
+    clearBtn.style.display = currentSearch ? 'block' : 'none';
+
+    applyFilters();
+}
+
+function clearSearch() {
+    const input = document.getElementById('snack_search');
+    input.value = '';
+    currentSearch = '';
+    document.getElementById('search_clear').style.display = 'none';
+    applyFilters();
+}
+
+function resetFilters() {
+    clearSearch();
+    const allTab = document.getElementById('tab_all');
+    filterCategory('all', allTab);
+}
+
+// Combined filtering logic
+function applyFilters() {
+    const cards = document.querySelectorAll('.snack-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const name = card.dataset.name;
+        const diet = card.dataset.diet;
+
+        const matchesCat = (currentCategory === 'all') || (diet === currentCategory);
+        const matchesSearch = !currentSearch || name.includes(currentSearch);
+
+        if (matchesCat && matchesSearch) {
+            card.style.display = 'flex';
+            card.classList.add('fade-in');
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+            card.classList.remove('fade-in');
+        }
+    });
+
+    document.getElementById('visible_count').innerText = visibleCount;
+    document.getElementById('no_results').style.display = (visibleCount === 0) ? 'block' : 'none';
+}
+
+// Quantity stepper
+function adjustQty(foodId, delta) {
+    const field = document.getElementById(`qty_${foodId}`);
+    let val = parseInt(field.value, 10) || 1;
+    val = Math.max(1, Math.min(10, val + delta));
+    field.value = val;
+}
+
+// Add to My Meals functionality via AJAX
+function addToMeals(foodId, foodName) {
+    const btn = document.getElementById(`btn_add_${foodId}`);
+    const qtyField = document.getElementById(`qty_${foodId}`);
+    const quantity = parseFloat(qtyField.value) || 1.0;
+
+    // Visual button loading state
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Adding...`;
+
+    fetch("{{ url_for('add_snack_api') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify({
+            food_id: foodId,
+            quantity: quantity,
+            meal_type: "Snack"
+        })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Failed to log snack.");
+        return response.json();
+    })
+    .then(data => {
+        // Success state on button
+        btn.innerHTML = `<span>✓</span> Added!`;
+        btn.classList.add('btn-success-state');
+
+        // Reset button after 1.8 seconds
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+            btn.classList.remove('btn-success-state');
+        }, 1800);
+
+        // Update top status bar if summary totals returned
+        if (data.summary && data.summary.total_calories !== undefined) {
+            document.getElementById('header_cal_display').innerText = Math.round(data.summary.total_calories);
+        }
+
+        // Show floating toast
+        showToast(foodName, quantity, data.calories);
+    })
+    .catch(err => {
+        console.error(err);
+        btn.innerHTML = `<span>⚠️</span> Retry`;
+        btn.disabled = false;
+        alert("Could not add snack. Please try again.");
+    });
+}
+
+// Toast notification helper
+function showToast(name, qty, cals) {
+    const toast = document.getElementById('snack_toast');
+    document.getElementById('toast_title').innerText = `Added to Today's Diary!`;
+    document.getElementById('toast_msg').innerText = `${qty}x ${name} (${cals} kcal) saved under Snacks.`;
+    
+    toast.style.display = 'block';
+    toast.classList.add('toast-show');
+
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+        toast.classList.remove('toast-show');
+        setTimeout(() => { toast.style.display = 'none'; }, 400);
+    }, 4000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Summary & Recommendations - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1>📊 Step 6: Personalized Daily Summary & Recommendations</h1>
+        <p>Real-time analytics for your daily nutrition intake, calorie targets, and intelligent recommendations.</p>
+    </div>
+
+    <!-- Date Selector Form -->
+    <form method="GET" action="{{ url_for('summary_view') }}" style="display: flex; gap: 0.5rem; align-items: center;">
+        <label for="date_picker" style="font-size: 0.9rem; font-weight: 600;">Date:</label>
+        <input type="date" id="date_picker" name="date" value="{{ selected_date }}" class="form-control" style="width: auto;" onchange="this.form.submit()">
+    </form>
+</div>
+
+<!-- Macro Progress Dashboard -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🎯 Daily Nutrition Progress & Targets ({{ selected_date }})</h2>
+        <a href="{{ url_for('upload_view') }}" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.88rem;">
+            ➕ Log Meal
+        </a>
+    </div>
+
+    <!-- 4 Key Stat Metrics -->
+    <div class="grid-4">
+        <!-- Calories -->
+        <div class="metric-box">
+            <span class="metric-label">Calories Consumed</span>
+            <div class="metric-value">{{ summary.total_calories|round|int }}</div>
+            <span class="metric-sub">of {{ summary.target_calories|round|int }} kcal target</span>
+            <div class="progress-container">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill fill-green" style="width: {{ summary.calorie_pct }}%;"></div>
+                </div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">
+                {% if summary.remaining_calories >= 0 %}
+                    {{ summary.remaining_calories|round|int }} kcal left
+                {% else %}
+                    {{ (summary.remaining_calories * -1)|round|int }} kcal surplus
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Protein -->
+        <div class="metric-box">
+            <span class="metric-label">Protein</span>
+            <div class="metric-value" style="color: var(--secondary);">{{ summary.total_protein|round(1) }}g</div>
+            <span class="metric-sub">of {{ summary.target_protein|round(1) }}g target</span>
+            <div class="progress-container">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill fill-orange" style="width: {{ summary.protein_pct }}%;"></div>
+                </div>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ summary.protein_pct }}% achieved</span>
+        </div>
+
+        <!-- Carbs -->
+        <div class="metric-box">
+            <span class="metric-label">Carbs</span>
+            <div class="metric-value" style="color: #3b82f6;">{{ summary.total_carbs|round(1) }}g</div>
+            <span class="metric-sub">of {{ summary.target_carbs|round(1) }}g target</span>
+            <div class="progress-container">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill fill-blue" style="width: {{ summary.carb_pct }}%;"></div>
+                </div>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ summary.carb_pct }}% achieved</span>
+        </div>
+
+        <!-- Fat -->
+        <div class="metric-box">
+            <span class="metric-label">Fat</span>
+            <div class="metric-value" style="color: #8b5cf6;">{{ summary.total_fat|round(1) }}g</div>
+            <span class="metric-sub">of {{ summary.target_fat|round(1) }}g target</span>
+            <div class="progress-container">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill fill-purple" style="width: {{ summary.fat_pct }}%;"></div>
+                </div>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ summary.fat_pct }}% achieved</span>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Left Column: Meals Logged by Category -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🍽️ Meals Logged for {{ selected_date }}</h2>
+            <span class="badge badge-all">{{ summary.logs|length }} entries</span>
+        </div>
+
+        {% if summary.logs %}
+            {% for meal_cat, items in summary.meals_by_type.items() %}
+                {% if items %}
+                <div style="margin-bottom: 1.25rem;">
+                    <h3 style="font-size: 1.05rem; color: var(--primary-dark); border-bottom: 1px dashed var(--border); padding-bottom: 0.35rem; margin-bottom: 0.6rem; display: flex; justify-content: space-between;">
+                        <span>{{ meal_cat }}</span>
+                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">
+                            {{ items|sum(attribute='calories')|round(1) }} kcal
+                        </span>
+                    </h3>
+                    
+                    {% for item in items %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid #f1f5f9; gap: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                            <img src="{{ item.image_path or url_for('static', filename='images/meals/dal_rice.svg') }}" 
+                                 alt="{{ item.food_name }}" 
+                                 style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0;"
+                                 onerror="this.onerror=null; this.src='/static/images/meals/dal_rice.svg';">
+                            <div>
+                                <strong>{{ item.food_name }}</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-muted);">
+                                    {{ item.quantity }} &times; {{ item.unit }} &bull; P: {{ item.protein }}g, C: {{ item.carbs }}g, F: {{ item.fat }}g
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-weight: 700; color: var(--primary-dark); font-size: 0.95rem;">
+                                {{ item.calories }} kcal
+                            </span>
+                            <form method="POST" action="{{ url_for('delete_meal_log_view', log_id=item.id) }}" onsubmit="return confirm('Remove this food from your diary?');">
+                                <input type="hidden" name="date" value="{{ selected_date }}">
+                                <button type="submit" class="btn-danger-sm" title="Delete entry">&times;</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                <p style="font-size: 1.8rem; margin-bottom: 0.5rem;">🥗</p>
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">No meals logged for this day yet.</p>
+                <p style="font-size: 0.85rem; margin-bottom: 1rem;">Upload a meal photo or enter ingredients to get started.</p>
+                <a href="{{ url_for('upload_view') }}" class="btn btn-primary">📸 Upload Meal Now</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Personalized AI Recommendations -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">💡 Personalized AI Meal Suggestions</h2>
+        </div>
+
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Based on your <strong>{{ profile.goal.replace('_', ' ').title() }}</strong> goal, 
+            <strong>{{ profile.diet_preference.title() }}</strong> diet, and 
+            <strong>{{ summary.remaining_calories|round|int }} kcal remaining</strong> today:
+        </p>
+
+        {% for item in suggestions %}
+        <div class="suggestion-card" style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                <img src="{{ item.food.image_url or url_for('static', filename='images/meals/dal_rice.svg') }}" 
+                     alt="{{ item.food.name }}" 
+                     style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0;"
+                     onerror="this.onerror=null; this.src='/static/images/meals/dal_rice.svg';">
+                <div>
+                    <div class="suggestion-title">{{ item.food.name }}</div>
+                    <div class="suggestion-desc">
+                        {{ item.reason }} &bull; 
+                        <strong>{{ item.food.calories }} kcal</strong> 
+                        (P: {{ item.food.protein }}g, C: {{ item.food.carbs }}g, F: {{ item.food.fat }}g)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Add Button -->
+            <form method="POST" action="{{ url_for('quick_log_view') }}">
+                <input type="hidden" name="food_id" value="{{ item.food.id }}">
+                <input type="hidden" name="meal_type" value="Snack">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">
+                    + Eat This
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+
+        <!-- Quick Tips based on remaining macros -->
+        <div style="margin-top: 1.5rem; background: var(--bg-light); border-radius: 8px; padding: 1rem; font-size: 0.85rem; color: var(--text-dark); border: 1px solid var(--border);">
+            <strong style="color: var(--primary-dark);">Nutrition Coach Insight:</strong>
+            <ul style="margin-left: 1.25rem; margin-top: 0.5rem; line-height: 1.6;">
+                {% if summary.protein_pct < 60 %}
+                    <li>You have consumed only {{ summary.protein_pct }}% of your protein target. Consider a protein shake, eggs, or Greek yogurt for your next snack.</li>
+                {% else %}
+                    <li>Great job on your protein intake today! You are on track for muscle preservation and recovery.</li>
+                {% endif %}
+
+                {% if summary.remaining_calories < 0 %}
+                    <li>You have exceeded your calorie target by {{ (summary.remaining_calories * -1)|round|int }} kcal today. Balance this out tomorrow with lighter meals.</li>
+                {% else %}
+                    <li>You have {{ summary.remaining_calories|round|int }} kcal available for your upcoming meal.</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Track Order {{ order.order_number }} - NutriTrack Delivery{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <a href="{{ url_for('orders_history_view') }}" style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--primary); display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0.4rem;">
+            &larr; Back to All Orders
+        </a>
+        <h1>🛵 Live Order Tracking: {{ order.order_number }}</h1>
+        <p>Your nutritious order is on its way. Track live preparation, delivery partner location, and nutrition metrics below.</p>
+    </div>
+
+    <div>
+        <a href="{{ url_for('delivery_view') }}" class="btn btn-outline">
+            ➕ Order More Food
+        </a>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Left Column: Status Pipeline & Driver Details -->
+    <div>
+        <!-- Live Status Stepper Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📍 Delivery Status</h2>
+                <span class="badge badge-all" id="current_status_badge">{{ order.status }}</span>
+            </div>
+
+            <!-- Stepper Container -->
+            <div class="tracking-stepper">
+                <!-- Step 1: Confirmed -->
+                <div class="step-item {% if order.status in ['Confirmed', 'Preparing with Fresh Ingredients', 'Out for Delivery', 'Delivered'] %}step-completed{% endif %}" id="step_1">
+                    <div class="step-icon">✓</div>
+                    <div class="step-content">
+                        <strong>Order Confirmed</strong>
+                        <p>Kitchen received your healthy meal order.</p>
+                    </div>
+                </div>
+
+                <!-- Step 2: Preparing -->
+                <div class="step-item {% if order.status in ['Preparing with Fresh Ingredients', 'Out for Delivery', 'Delivered'] %}step-completed{% elif order.status == 'Confirmed' %}step-active{% endif %}" id="step_2">
+                    <div class="step-icon">🍳</div>
+                    <div class="step-content">
+                        <strong>Preparing with Fresh Ingredients</strong>
+                        <p>Chefs are cooking with balanced macros & hygienic ingredients.</p>
+                    </div>
+                </div>
+
+                <!-- Step 3: Out for Delivery -->
+                <div class="step-item {% if order.status in ['Out for Delivery', 'Delivered'] %}step-completed{% elif order.status == 'Preparing with Fresh Ingredients' %}step-active{% endif %}" id="step_3">
+                    <div class="step-icon">🛵</div>
+                    <div class="step-content">
+                        <strong>Rider Out for Delivery</strong>
+                        <p>Your eco-friendly EV rider is on the way to your doorstep.</p>
+                    </div>
+                </div>
+
+                <!-- Step 4: Delivered -->
+                <div class="step-item {% if order.status == 'Delivered' %}step-completed{% endif %}" id="step_4">
+                    <div class="step-icon">📦</div>
+                    <div class="step-content">
+                        <strong>Delivered Fresh & Hot</strong>
+                        <p>Enjoy your meal and stay healthy!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estimated Arrival Bar -->
+            <div style="background: var(--primary-light); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: var(--primary-dark); display: block;">Estimated Arrival</span>
+                    <strong style="font-size: 1.25rem; color: var(--primary-dark);">{{ order.estimated_delivery_time }}</strong>
+                </div>
+                <div style="text-align: right; font-size: 0.85rem; color: #166534;">
+                    Slot: <strong>{{ order.delivery_slot }}</strong>
+                </div>
+            </div>
+
+            <!-- Demo Status Advance Controls -->
+            <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">
+                    🧪 Demo Control: Advance Delivery Status
+                </span>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.65rem;" onclick="advanceStatus('Confirmed')">1. Confirmed</button>
+                    <button type="button" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.65rem;" onclick="advanceStatus('Preparing with Fresh Ingredients')">2. Kitchen Prep</button>
+                    <button type="button" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.65rem;" onclick="advanceStatus('Out for Delivery')">3. Out for Delivery</button>
+                    <button type="button" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.65rem;" onclick="advanceStatus('Delivered')">4. Delivered</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rider & Destination Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">🛵 Delivery Partner & Destination</h2>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+                <div style="width: 54px; height: 54px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: 2px solid #bae6fd;">
+                    🛵
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.2rem;">
+                        {{ order.rider_name }} <span style="font-size: 0.8rem; font-weight: 600; color: #0284c7; background: #e0f2fe; padding: 0.15rem 0.45rem; border-radius: 999px;">⭐ 4.9</span>
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+                        EV Delivery Fleet &bull; Contact: <strong>{{ order.rider_phone }}</strong>
+                    </p>
+                </div>
+                <a href="tel:{{ order.rider_phone }}" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.4rem 0.75rem;">
+                    📞 Call
+                </a>
+            </div>
+
+            <div style="background: #f8fafc; border-radius: 8px; padding: 0.9rem; font-size: 0.9rem; border: 1px solid var(--border);">
+                <div style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.2rem;">
+                    Delivering To:
+                </div>
+                <strong style="color: var(--text-dark); display: block;">{{ order.customer_name }} ({{ order.phone }})</strong>
+                <p style="color: #4b5563; margin-top: 0.2rem; margin-bottom: 0;">{{ order.delivery_address }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Nutrition Metrics & Itemized Bill -->
+    <div>
+        <!-- Delivered Nutrition Summary Card -->
+        <div class="card" style="border-left: 4.5px solid var(--primary);">
+            <div class="card-header">
+                <h2 class="card-title">🥗 Total Nutrition in this Order</h2>
+                {% if order.auto_logged %}
+                    <span class="badge badge-vegan">✓ Logged to Diary</span>
+                {% endif %}
+            </div>
+
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Here is the verified nutritional content of your delivered order:
+            </p>
+
+            <div class="grid-4" style="gap: 0.65rem;">
+                <div class="metric-box" style="padding: 0.75rem;">
+                    <span class="metric-label" style="font-size: 0.72rem;">Calories</span>
+                    <div class="metric-value" style="font-size: 1.35rem;">{{ order.total_calories|round|int }}</div>
+                    <span class="metric-sub" style="font-size: 0.7rem;">kcal</span>
+                </div>
+                <div class="metric-box" style="padding: 0.75rem;">
+                    <span class="metric-label" style="font-size: 0.72rem;">Protein</span>
+                    <div class="metric-value" style="font-size: 1.35rem; color: #d97706;">{{ order.total_protein }}g</div>
+                    <span class="metric-sub" style="font-size: 0.7rem;">muscle repair</span>
+                </div>
+                <div class="metric-box" style="padding: 0.75rem;">
+                    <span class="metric-label" style="font-size: 0.72rem;">Carbs</span>
+                    <div class="metric-value" style="font-size: 1.35rem; color: #2563eb;">{{ order.total_carbs }}g</div>
+                    <span class="metric-sub" style="font-size: 0.7rem;">energy</span>
+                </div>
+                <div class="metric-box" style="padding: 0.75rem;">
+                    <span class="metric-label" style="font-size: 0.72rem;">Fat</span>
+                    <div class="metric-value" style="font-size: 1.35rem; color: #9333ea;">{{ order.total_fat }}g</div>
+                    <span class="metric-sub" style="font-size: 0.7rem;">healthy fats</span>
+                </div>
+            </div>
+
+            {% if order.auto_logged %}
+            <div style="margin-top: 1rem; font-size: 0.85rem; color: #166534; background: #dcfce7; padding: 0.65rem 0.85rem; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                <span>✨ These foods were automatically added to your NutriTrack diary!</span>
+                <a href="{{ url_for('summary_view') }}" style="color: #14532d; font-weight: 700; text-decoration: underline;">View Diary &rarr;</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Itemized Order Invoice Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">🧾 Items in this Order ({{ items|length }})</h2>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">{{ order.payment_method }}</span>
+            </div>
+
+            <table class="data-table" style="margin-top: 0;">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Nutrition</th>
+                        <th style="text-align: right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.food_name }}</strong>
+                        </td>
+                        <td>{{ item.quantity|round|int if item.quantity == item.quantity|int else item.quantity }}</td>
+                        <td style="font-size: 0.8rem; color: var(--text-muted);">
+                            {{ item.calories|round|int }} kcal &bull; P: {{ item.protein }}g
+                        </td>
+                        <td style="text-align: right; font-weight: 700;">
+                            ₹{{ (item.price * item.quantity)|round|int }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Bill Totals -->
+            <div style="border-top: 1px solid var(--border); padding-top: 0.85rem; margin-top: 0.85rem; font-size: 0.92rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                    <span style="color: var(--text-muted);">Items Subtotal:</span>
+                    <span>₹{{ order.subtotal|round|int }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                    <span style="color: var(--text-muted);">Delivery Fee:</span>
+                    <span>{% if order.delivery_fee == 0 %}<strong style="color: #166534;">FREE</strong>{% else %}₹{{ order.delivery_fee|round|int }}{% endif %}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); border-top: 1px dashed var(--border); padding-top: 0.5rem; margin-top: 0.4rem;">
+                    <span>Total Paid / Due:</span>
+                    <span>₹{{ order.total_price|round|int }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Clear delivery cart on tracking load
+localStorage.removeItem('nutritrack_delivery_cart');
+
+function advanceStatus(statusName) {
+    fetch("{{ url_for('api_update_order_status', order_id=order.id) }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify({ status: statusName })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert("Could not update status.");
+        }
+    })
+    .catch(err => console.error(err));
+}
+</script>
+{% endblock %}

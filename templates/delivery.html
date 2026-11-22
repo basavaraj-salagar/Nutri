@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block title %}Food Delivery - NutriTrack{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1>🛵 NutriTrack Healthy Food Delivery</h1>
+        <p>Order fresh, macro-balanced meals and delicious snacks delivered right to your doorstep. Know every calorie and gram of protein before you eat!</p>
+    </div>
+
+    <!-- Active Orders / Cart Shortcut -->
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('orders_history_view') }}" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            📦 My Orders History
+        </a>
+        <button type="button" class="btn btn-primary" onclick="openCartDrawer()" id="cart_header_btn" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            🛒 Cart (<span id="cart_badge_count">0</span>) &bull; <span id="cart_badge_total">₹0</span>
+        </button>
+    </div>
+</div>
+
+<!-- Category Tabs & Search Bar -->
+<div class="card" style="margin-bottom: 1.5rem; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        
+        <!-- Category Filters -->
+        <div class="snack-tabs" role="tablist">
+            <a href="{{ url_for('delivery_view', cat='all') }}" class="snack-tab-btn {% if selected_category == 'all' %}active{% endif %}">
+                🍽️ All Items
+            </a>
+            <a href="{{ url_for('delivery_view', cat='dinner') }}" class="snack-tab-btn {% if selected_category == 'dinner' %}active{% endif %}" style="border-color: #8b5cf6; color: #6d28d9; background: {% if selected_category == 'dinner' %}#f5f3ff{% else %}#ffffff{% endif %}; font-weight: 700;">
+                🌙 Dinner Specials
+            </a>
+            <a href="{{ url_for('delivery_view', cat='meals') }}" class="snack-tab-btn {% if selected_category == 'meals' %}active{% endif %}">
+                🍛 Full Meals
+            </a>
+            <a href="{{ url_for('delivery_view', cat='snacks') }}" class="snack-tab-btn {% if selected_category == 'snacks' %}active{% endif %}">
+                🍿 Snacks
+            </a>
+            <a href="{{ url_for('delivery_view', cat='veg') }}" class="snack-tab-btn veg-tab {% if selected_category == 'veg' %}active{% endif %}">
+                🌱 Veg Only
+            </a>
+            <a href="{{ url_for('delivery_view', cat='nonveg') }}" class="snack-tab-btn nonveg-tab {% if selected_category == 'nonveg' %}active{% endif %}">
+                🍗 Non-Veg Only
+            </a>
+        </div>
+
+        <!-- Search Form -->
+        <form method="GET" action="{{ url_for('delivery_view') }}" style="display: flex; gap: 0.5rem; flex: 1; max-width: 320px;">
+            <input type="hidden" name="cat" value="{{ selected_category }}">
+            <input type="text" name="q" class="form-control" placeholder="Search delivery items..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary" style="padding: 0.5rem 0.9rem;">Search</button>
+            {% if search_query %}
+                <a href="{{ url_for('delivery_view', cat=selected_category) }}" class="btn btn-outline" style="padding: 0.5rem 0.75rem;">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Active Delivery Info -->
+    <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+        <div>
+            ⚡ Average delivery time: <strong>30-40 minutes</strong> &bull; Free delivery on orders over ₹250!
+        </div>
+        <div style="color: var(--primary-dark); font-weight: 600;">
+            Showing {{ foods|length }} nutritious items available
+        </div>
+    </div>
+</div>
+
+<!-- Delivery Items Grid -->
+<div class="snacks-grid">
+    {% for food in foods %}
+    <div class="snack-card {% if food.diet_type in ['vegetarian', 'vegan'] %}theme-veg{% else %}theme-nonveg{% endif %}">
+        
+        <!-- Image & Badge -->
+        <div class="snack-image-wrap">
+            <img src="{{ food.image_url or url_for('static', filename='images/snacks/' + food.name|lower|replace(' ', '_') + '.svg') }}" 
+                 alt="{{ food.name }}" 
+                 class="snack-img" 
+                 loading="lazy"
+                 onerror="this.onerror=null; this.src='/static/images/snacks/samosa.svg';">
+            
+            <div class="diet-badge-pill {% if food.diet_type in ['vegetarian', 'vegan'] %}pill-veg{% else %}pill-nonveg{% endif %}">
+                {% if food.diet_type in ['vegetarian', 'vegan'] %}🌱 Veg{% else %}🍗 Non-Veg{% endif %}
+            </div>
+
+            <!-- Price Tag Pill -->
+            <div style="position: absolute; bottom: 0.65rem; right: 0.65rem; background: #ffffff; padding: 0.25rem 0.65rem; border-radius: 999px; font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); box-shadow: 0 2px 5px rgba(0,0,0,0.15);">
+                ₹{{ food.price|round|int if food.price else 99 }}
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="snack-card-body">
+            <div class="snack-title-row">
+                <h3 class="snack-title">{{ food.name }}</h3>
+                <span class="snack-serving-badge">{{ food.serving_size }} {{ food.serving_unit }}</span>
+            </div>
+
+            <!-- Nutrition Pills -->
+            <div class="snack-macro-grid">
+                <div class="macro-pill pill-cal" title="Calories">
+                    <span class="macro-val">{{ food.calories|round|int }}</span>
+                    <span class="macro-lbl">kcal</span>
+                </div>
+                <div class="macro-pill pill-pro" title="Protein">
+                    <span class="macro-val">{{ food.protein }}g</span>
+                    <span class="macro-lbl">Protein</span>
+                </div>
+                <div class="macro-pill pill-carb" title="Carbs">
+                    <span class="macro-val">{{ food.carbs }}g</span>
+                    <span class="macro-lbl">Carbs</span>
+                </div>
+                <div class="macro-pill pill-fat" title="Fat">
+                    <span class="macro-val">{{ food.fat }}g</span>
+                    <span class="macro-lbl">Fat</span>
+                </div>
+            </div>
+
+            <!-- Add to Delivery Cart Action -->
+            <div class="snack-action-row">
+                <button type="button" 
+                        class="btn btn-primary" 
+                        style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem;" 
+                        onclick="addToCart({{ food.id }}, '{{ food.name }}', {{ food.price|round|int if food.price else 99 }}, {{ food.calories }}, {{ food.protein }}, {{ food.carbs }}, {{ food.fat }}, '{{ food.image_url or '' }}')">
+                    <span>🛵</span>
+                    <span>Add to Delivery Order</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ========================================================================= -->
+<!-- Slide-Over Checkout Drawer Modal -->
+<!-- ========================================================================= -->
+<div id="cart_overlay" class="drawer-overlay" onclick="closeCartDrawer()" style="display: none;"></div>
+
+<div id="cart_drawer" class="cart-drawer" style="display: none;">
+    <div class="drawer-header">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-dark); display: flex; align-items: center; gap: 0.5rem;">
+            <span>🛒</span> Your Delivery Cart
+        </h2>
+        <button type="button" class="drawer-close" onclick="closeCartDrawer()">&times;</button>
+    </div>
+
+    <!-- Scrollable Items List -->
+    <div id="cart_items_container" class="drawer-body">
+        <div id="cart_empty_msg" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+            <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">🛵</p>
+            <strong style="color: var(--text-dark); display: block; margin-bottom: 0.25rem;">Your cart is empty!</strong>
+            <p style="font-size: 0.85rem;">Click "Add to Delivery Order" on any meal or snack to start building your order.</p>
+        </div>
+
+        <div id="cart_items_list"></div>
+
+        <!-- Order Nutrition Summary Box -->
+        <div id="cart_nutrition_box" style="display: none; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 0.85rem; margin-top: 1rem;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #166534; text-transform: uppercase; margin-bottom: 0.4rem;">
+                🥗 Total Order Nutrition Delivered
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; color: #14532d; font-weight: 600;">
+                <span>Calories: <strong id="cart_total_cals">0</strong> kcal</span>
+                <span>P: <strong id="cart_total_pro">0</strong>g</span>
+                <span>C: <strong id="cart_total_carb">0</strong>g</span>
+                <span>F: <strong id="cart_total_fat">0</strong>g</span>
+            </div>
+        </div>
+
+        <!-- Checkout Form Section -->
+        <form id="checkout_form" method="POST" action="{{ url_for('checkout_view') }}" style="display: none; margin-top: 1.25rem;">
+            <input type="hidden" id="cart_data_input" name="cart_data" value="[]">
+
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--primary-dark); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; margin-bottom: 0.85rem;">
+                📍 Delivery Details
+            </h3>
+
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label for="cust_name" style="font-size: 0.85rem; font-weight: 600;">Your Name</label>
+                <input type="text" id="cust_name" name="customer_name" class="form-control" value="{{ profile.name if profile else '' }}" required placeholder="e.g. Alex Smith">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label for="cust_phone" style="font-size: 0.85rem; font-weight: 600;">Phone Number</label>
+                <input type="tel" id="cust_phone" name="phone" class="form-control" required placeholder="e.g. +91 98765 43210" value="+91 98765 43210">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label for="cust_address" style="font-size: 0.85rem; font-weight: 600;">Delivery Address</label>
+                <textarea id="cust_address" name="address" class="form-control" style="min-height: 60px;" required placeholder="House/Flat No., Street, Landmark, City">Flat 402, Green Meadows Apt, Indiranagar, Bengaluru</textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label for="delivery_slot" style="font-size: 0.85rem; font-weight: 600;">Preferred Delivery Slot</label>
+                <select id="delivery_slot" name="delivery_slot" class="form-control">
+                    <option value="Instant Delivery (30-40 mins)" selected>⚡ Instant Delivery (30-40 mins)</option>
+                    <option value="Healthy Lunch Slot (12:30 PM - 1:30 PM)">🥗 Healthy Lunch Slot (12:30 PM - 1:30 PM)</option>
+                    <option value="Evening Snacks Slot (4:30 PM - 5:30 PM)">🍿 Evening Snacks Slot (4:30 PM - 5:30 PM)</option>
+                    <option value="Healthy Dinner Slot (7:30 PM - 8:30 PM)">🍲 Healthy Dinner Slot (7:30 PM - 8:30 PM)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="payment_method" style="font-size: 0.85rem; font-weight: 600;">Payment Method</label>
+                <select id="payment_method" name="payment_method" class="form-control">
+                    <option value="Cash on Delivery" selected>💵 Cash on Delivery (Pay upon arrival)</option>
+                    <option value="UPI / Online Payment">📱 UPI / QR Scan on Delivery (GPay / PhonePe / Paytm)</option>
+                </select>
+            </div>
+
+            <!-- Auto-log Checkbox -->
+            <div style="background: var(--primary-light); border-radius: 8px; padding: 0.75rem; margin-bottom: 1.25rem;">
+                <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--primary-dark); font-weight: 500; margin-bottom: 0;">
+                    <input type="checkbox" name="auto_log" checked style="margin-top: 0.2rem;">
+                    <span><strong>Auto-Log in Daily Diary:</strong> Automatically log these foods and calories to my NutriTrack diary when this order is placed.</span>
+                </label>
+            </div>
+
+            <!-- Pricing Breakdown -->
+            <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-bottom: 1.25rem; font-size: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                    <span style="color: var(--text-muted);">Items Subtotal:</span>
+                    <strong>₹<span id="bill_subtotal">0</span></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                    <span style="color: var(--text-muted);">Delivery Fee:</span>
+                    <span id="bill_delivery_fee" style="color: #166534; font-weight: 600;">FREE</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 800; color: var(--primary-dark); border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+                    <span>Grand Total:</span>
+                    <span>₹<span id="bill_total">0</span></span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+                ✅ Confirm & Place Delivery Order
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// In-memory cart array: [{food_id, name, price, calories, protein, carbs, fat, quantity, image_url}]
+let cart = [];
+
+function loadCart() {
+    try {
+        const stored = localStorage.getItem('nutritrack_delivery_cart');
+        if (stored) {
+            cart = JSON.parse(stored);
+        }
+    } catch(e) {
+        cart = [];
+    }
+    updateCartUI();
+}
+
+function saveCart() {
+    localStorage.setItem('nutritrack_delivery_cart', JSON.stringify(cart));
+    updateCartUI();
+}
+
+function addToCart(foodId, name, price, cals, pro, carb, fat, img) {
+    const existing = cart.find(item => item.food_id === foodId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({
+            food_id: foodId,
+            name: name,
+            price: price,
+            calories: cals,
+            protein: pro,
+            carbs: carb,
+            fat: fat,
+            quantity: 1,
+            image_url: img
+        });
+    }
+    saveCart();
+    openCartDrawer();
+}
+
+function changeQty(foodId, delta) {
+    const item = cart.find(i => i.food_id === foodId);
+    if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            cart = cart.filter(i => i.food_id !== foodId);
+        }
+        saveCart();
+    }
+}
+
+function removeItem(foodId) {
+    cart = cart.filter(i => i.food_id !== foodId);
+    saveCart();
+}
+
+function updateCartUI() {
+    const list = document.getElementById('cart_items_list');
+    const emptyMsg = document.getElementById('cart_empty_msg');
+    const form = document.getElementById('checkout_form');
+    const nutritionBox = document.getElementById('cart_nutrition_box');
+    const badgeCount = document.getElementById('cart_badge_count');
+    const badgeTotal = document.getElementById('cart_badge_total');
+
+    let totalItems = 0;
+    let subtotal = 0;
+    let totalCals = 0;
+    let totalPro = 0;
+    let totalCarb = 0;
+    let totalFat = 0;
+
+    list.innerHTML = '';
+
+    if (cart.length === 0) {
+        emptyMsg.style.display = 'block';
+        form.style.display = 'none';
+        nutritionBox.style.display = 'none';
+        badgeCount.innerText = '0';
+        badgeTotal.innerText = '₹0';
+        return;
+    }
+
+    emptyMsg.style.display = 'none';
+    form.style.display = 'block';
+    nutritionBox.style.display = 'block';
+
+    cart.forEach(item => {
+        totalItems += item.quantity;
+        const itemCost = item.price * item.quantity;
+        subtotal += itemCost;
+        totalCals += (item.calories * item.quantity);
+        totalPro += (item.protein * item.quantity);
+        totalCarb += (item.carbs * item.quantity);
+        totalFat += (item.fat * item.quantity);
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0; border-bottom: 1px solid #f1f5f9; gap: 0.6rem;';
+        row.innerHTML = `
+            <img src="${item.image_url || '/static/images/snacks/samosa.svg'}" alt="${item.name}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0;" onerror="this.onerror=null; this.src='/static/images/snacks/samosa.svg';">
+            <div style="flex: 1; min-width: 0;">
+                <strong style="color: var(--primary-dark); font-size: 0.95rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                    ₹${item.price} each &bull; ${Math.round(item.calories * item.quantity)} kcal (P: ${(item.protein * item.quantity).toFixed(1)}g)
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
+                <div class="qty-control" style="transform: scale(0.85);">
+                    <button type="button" class="qty-btn" onclick="changeQty(${item.food_id}, -1)">-</button>
+                    <span class="qty-field" style="display: inline-block; line-height: 34px;">${item.quantity}</span>
+                    <button type="button" class="qty-btn" onclick="changeQty(${item.food_id}, 1)">+</button>
+                </div>
+                <strong style="min-width: 48px; text-align: right; font-size: 0.95rem;">₹${itemCost}</strong>
+                <button type="button" onclick="removeItem(${item.food_id})" style="border: none; background: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; padding: 0 0.2rem;" title="Remove">&times;</button>
+            </div>
+        `;
+        list.appendChild(row);
+    });
+
+    const deliveryFee = (subtotal >= 250) ? 0 : 30;
+    const grandTotal = subtotal + deliveryFee;
+
+    // Badges
+    badgeCount.innerText = totalItems;
+    badgeTotal.innerText = `₹${subtotal}`;
+
+    // Bill
+    document.getElementById('bill_subtotal').innerText = subtotal;
+    const feeEl = document.getElementById('bill_delivery_fee');
+    if (deliveryFee === 0) {
+        feeEl.innerText = 'FREE';
+        feeEl.style.color = '#166534';
+    } else {
+        feeEl.innerText = `₹${deliveryFee}`;
+        feeEl.style.color = 'var(--text-dark)';
+    }
+    document.getElementById('bill_total').innerText = grandTotal;
+
+    // Nutrition Box
+    document.getElementById('cart_total_cals').innerText = Math.round(totalCals);
+    document.getElementById('cart_total_pro').innerText = totalPro.toFixed(1);
+    document.getElementById('cart_total_carb').innerText = totalCarb.toFixed(1);
+    document.getElementById('cart_total_fat').innerText = totalFat.toFixed(1);
+
+    // Form hidden input
+    document.getElementById('cart_data_input').value = JSON.stringify(cart);
+}
+
+function openCartDrawer() {
+    document.getElementById('cart_overlay').style.display = 'block';
+    const drawer = document.getElementById('cart_drawer');
+    drawer.style.display = 'flex';
+    setTimeout(() => drawer.classList.add('drawer-open'), 10);
+}
+
+function closeCartDrawer() {
+    const drawer = document.getElementById('cart_drawer');
+    drawer.classList.remove('drawer-open');
+    setTimeout(() => {
+        drawer.style.display = 'none';
+        document.getElementById('cart_overlay').style.display = 'none';
+    }, 250);
+}
+
+// Clear cart on successful order submission
+document.addEventListener('DOMContentLoaded', () => {
+    loadCart();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Meal - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📸 Step 2: Upload Meal & Enter Ingredients</h1>
+    <p>Upload a food photo or type ingredients to let NutriTrack AI detect items, calculate portions, and look up nutrition values.</p>
+</div>
+
+<div class="grid-2">
+    <!-- Option A: Upload Food Photo -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">📷 Option A: Upload Food Photo</h2>
+        </div>
+        <form method="POST" action="{{ url_for('upload_view') }}" enctype="multipart/form-data">
+            <input type="hidden" name="input_type" value="image">
+            
+            <div class="form-group">
+                <label for="meal_image">Select Meal Image (JPG, PNG, JPEG, WEBP)</label>
+                <div class="dropzone" onclick="document.getElementById('meal_image').click();">
+                    <span class="dropzone-icon">🍽️</span>
+                    <p style="font-weight: 600; color: var(--primary-dark);">Click to browse meal photo</p>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">or drag and drop here</p>
+                    <div id="image_filename_preview" style="margin-top: 0.75rem; font-weight: 600; color: var(--primary);"></div>
+                </div>
+                <input type="file" id="meal_image" name="meal_image" class="form-control" style="display: none;" accept="image/*" onchange="previewImageFile(this)">
+            </div>
+
+            <div class="form-group">
+                <label for="photo_meal_type">Meal Category</label>
+                <select id="photo_meal_type" name="meal_type" class="form-control">
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch" selected>Lunch</option>
+                    <option value="Dinner">Dinner</option>
+                    <option value="Snack">Snack</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                ⚡ Run AI Food Recognition
+            </button>
+        </form>
+    </div>
+
+    <!-- Option B: Enter Ingredients / Text Description -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">✍️ Option B: Enter Meal Ingredients</h2>
+        </div>
+        <form method="POST" action="{{ url_for('upload_view') }}">
+            <input type="hidden" name="input_type" value="text">
+
+            <div class="form-group">
+                <label for="ingredients_text">Enter ingredients or dish description</label>
+                <textarea id="ingredients_text" name="ingredients_text" class="form-control" placeholder="e.g. 2 boiled eggs, 1 slice whole wheat bread, 1 medium apple" required></textarea>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem;">
+                    💡 Separate ingredients with commas or "and". Quantities like "150g rice" or "2 eggs" are automatically understood.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label for="text_meal_type">Meal Category</label>
+                <select id="text_meal_type" name="meal_type" class="form-control">
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch" selected>Lunch</option>
+                    <option value="Dinner">Dinner</option>
+                    <option value="Snack">Snack</option>
+                </select>
+            </div>
+
+            <!-- Quick sample buttons -->
+            <div style="margin-bottom: 1.25rem;">
+                <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">Quick Examples:</span>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;">
+                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.82rem;" onclick="setSample('2 boiled eggs, 1 slice whole wheat bread, 1 apple', 'Breakfast')">
+                        🍳 Egg Breakfast
+                    </button>
+                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.82rem;" onclick="setSample('1 bowl cooked brown rice, 1 bowl dal / yellow lentil curry, 1 bowl mixed green salad', 'Lunch')">
+                        🥗 Dal & Rice Lunch
+                    </button>
+                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.82rem;" onclick="setSample('100g grilled chicken breast, 1 cup steamed broccoli, 1 bowl cooked white rice', 'Dinner')">
+                        🍗 Chicken & Rice Dinner
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                🔍 Analyze Ingredients & Estimate Portions
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewImageFile(input) {
+    const previewDiv = document.getElementById('image_filename_preview');
+    if (input.files && input.files[0]) {
+        previewDiv.innerText = "Selected: " + input.files[0].name;
+    }
+}
+
+function setSample(text, mealType) {
+    document.getElementById('ingredients_text').value = text;
+    document.getElementById('text_meal_type').value = mealType;
+}
+</script>
+{% endblock %}
