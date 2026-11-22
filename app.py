@@ -132,8 +132,9 @@ def upload_view():
                 file.save(save_path)
                 image_filename = safe_name
 
-                # Step 3: Run AI Visual Recognition
-                detected_items = ai_service.analyze_meal_photo(safe_name, save_path)
+                food_hint = request.form.get("food_hint", "").strip()
+                # Step 3: Run AI Visual Recognition (with optional user dish hint / Gemini vision)
+                detected_items = ai_service.analyze_meal_photo(safe_name, save_path, food_hint=food_hint)
             else:
                 flash("Invalid image format. Supported formats: JPG, PNG, WEBP, GIF.", "error")
                 return redirect(request.url)

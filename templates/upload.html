@@ -13,19 +13,66 @@
     <div class="card">
         <div class="card-header">
             <h2 class="card-title">📷 Option A: Upload Food Photo</h2>
+            <span class="badge badge-veg">AI Vision</span>
         </div>
-        <form method="POST" action="{{ url_for('upload_view') }}" enctype="multipart/form-data">
+        <form id="image_upload_form" method="POST" action="{{ url_for('upload_view') }}" enctype="multipart/form-data">
             <input type="hidden" name="input_type" value="image">
             
             <div class="form-group">
-                <label for="meal_image">Select Meal Image (JPG, PNG, JPEG, WEBP)</label>
-                <div class="dropzone" onclick="document.getElementById('meal_image').click();">
-                    <span class="dropzone-icon">🍽️</span>
-                    <p style="font-weight: 600; color: var(--primary-dark);">Click to browse meal photo</p>
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">or drag and drop here</p>
-                    <div id="image_filename_preview" style="margin-top: 0.75rem; font-weight: 600; color: var(--primary);"></div>
+                <label for="meal_image">Select or Drop Meal Image (JPG, PNG, JPEG, WEBP)</label>
+                
+                <!-- Interactive Dropzone -->
+                <div id="dropzone_container" class="dropzone" style="cursor: pointer; position: relative; transition: all 0.25s ease;" onclick="document.getElementById('meal_image').click();">
+                    <div id="dropzone_prompt">
+                        <span class="dropzone-icon" style="font-size: 2.4rem; display: block; margin-bottom: 0.5rem;">🍽️</span>
+                        <p style="font-weight: 600; color: var(--primary-dark); margin-bottom: 0.25rem;">Click to browse or drag and drop meal photo</p>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Supported formats: JPG, PNG, WEBP, GIF (Up to 16 MB)</p>
+                    </div>
+
+                    <!-- Live Image Preview Container -->
+                    <div id="image_preview_box" style="display: none; text-align: center; margin-top: 0.75rem;">
+                        <img id="image_preview_img" src="" alt="Selected Meal Preview" 
+                             style="max-height: 220px; max-width: 100%; border-radius: 8px; border: 2px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain;">
+                        <div id="image_preview_meta" style="margin-top: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--primary);"></div>
+                        <button type="button" class="btn btn-outline" style="margin-top: 0.5rem; padding: 0.25rem 0.75rem; font-size: 0.8rem;" onclick="clearImageSelection(event)">
+                            🔄 Change Photo
+                        </button>
+                    </div>
                 </div>
-                <input type="file" id="meal_image" name="meal_image" class="form-control" style="display: none;" accept="image/*" onchange="previewImageFile(this)">
+
+                <!-- Hidden file inputs for File Picker & Mobile Camera -->
+                <input type="file" id="meal_image" name="meal_image" class="form-control" style="display: none;" accept="image/*" onchange="handleFileSelected(this)">
+                <input type="file" id="camera_image" class="form-control" style="display: none;" accept="image/*" capture="environment" onchange="handleCameraCaptured(this)">
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.6rem;">
+                    <button type="button" class="btn btn-outline" style="flex: 1; padding: 0.4rem; font-size: 0.85rem;" onclick="document.getElementById('meal_image').click();">
+                        📁 Choose File
+                    </button>
+                    <button type="button" class="btn btn-outline" style="flex: 1; padding: 0.4rem; font-size: 0.85rem;" onclick="document.getElementById('camera_image').click();">
+                        📸 Snap Camera
+                    </button>
+                </div>
+            </div>
+
+            <!-- Optional Dish Name / Food Hint for accurate AI recognition -->
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="food_hint" style="display: flex; justify-content: space-between;">
+                    <span>Dish Name or Hint <span style="font-weight: normal; color: var(--text-muted);">(Optional)</span></span>
+                    <span style="font-size: 0.78rem; color: var(--primary);">Boosts recognition accuracy</span>
+                </label>
+                <input type="text" id="food_hint" name="food_hint" class="form-control" placeholder="e.g. Chicken Biryani, 2 Rotis with Dal, Paneer Dosa...">
+                
+                <!-- Quick meal suggestion chips -->
+                <div style="margin-top: 0.5rem;">
+                    <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Popular Dishes:</span>
+                    <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.35rem;">
+                        <span class="badge" style="cursor: pointer; background: #e0f2fe; color: #0284c7;" onclick="setPhotoHint('Chicken Biryani')">🍗 Chicken Biryani</span>
+                        <span class="badge" style="cursor: pointer; background: #fef3c7; color: #b45309;" onclick="setPhotoHint('Paneer Butter Masala, 2 Rotis')">🥘 Paneer & Roti</span>
+                        <span class="badge" style="cursor: pointer; background: #dcfce7; color: #15803d;" onclick="setPhotoHint('Cooked White Rice, Dal Curry, Salad')">🥗 Rice & Dal</span>
+                        <span class="badge" style="cursor: pointer; background: #ffedd5; color: #c2410c;" onclick="setPhotoHint('2 Masala Dosas')">🥞 Masala Dosa</span>
+                        <span class="badge" style="cursor: pointer; background: #f3e8ff; color: #7e22ce;" onclick="setPhotoHint('2 Boiled Eggs, 2 Slices Toast')">🍳 Eggs & Toast</span>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -38,7 +85,7 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
+            <button type="submit" id="submit_photo_btn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
                 ⚡ Run AI Food Recognition
             </button>
         </form>
@@ -96,11 +143,100 @@
 
 {% block scripts %}
 <script>
-function previewImageFile(input) {
-    const previewDiv = document.getElementById('image_filename_preview');
+const dropzone = document.getElementById('dropzone_container');
+const fileInput = document.getElementById('meal_image');
+const previewBox = document.getElementById('image_preview_box');
+const previewImg = document.getElementById('image_preview_img');
+const previewMeta = document.getElementById('image_preview_meta');
+const promptBox = document.getElementById('dropzone_prompt');
+const photoForm = document.getElementById('image_upload_form');
+const submitBtn = document.getElementById('submit_photo_btn');
+
+// Drag and drop event handling
+if (dropzone) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.borderColor = 'var(--primary)';
+            dropzone.style.background = '#f0fdf4';
+            dropzone.style.transform = 'scale(1.01)';
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.borderColor = 'var(--border)';
+            dropzone.style.background = 'white';
+            dropzone.style.transform = 'scale(1)';
+        });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+            fileInput.files = dt.files;
+            displayImagePreview(dt.files[0]);
+        }
+    });
+}
+
+function handleFileSelected(input) {
     if (input.files && input.files[0]) {
-        previewDiv.innerText = "Selected: " + input.files[0].name;
+        displayImagePreview(input.files[0]);
     }
+}
+
+function handleCameraCaptured(input) {
+    if (input.files && input.files[0]) {
+        fileInput.files = input.files;
+        displayImagePreview(input.files[0]);
+    }
+}
+
+function displayImagePreview(file) {
+    if (!file || !file.type.startsWith('image/')) {
+        alert('Please choose a valid image file.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+        previewMeta.innerText = `✅ ${file.name} (${sizeMb} MB)`;
+        promptBox.style.display = 'none';
+        previewBox.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearImageSelection(event) {
+    event.stopPropagation();
+    fileInput.value = '';
+    previewImg.src = '';
+    previewBox.style.display = 'none';
+    promptBox.style.display = 'block';
+    document.getElementById('meal_image').click();
+}
+
+function setPhotoHint(hintText) {
+    document.getElementById('food_hint').value = hintText;
+}
+
+if (photoForm) {
+    photoForm.addEventListener('submit', function(e) {
+        if (!fileInput.files || fileInput.files.length === 0) {
+            e.preventDefault();
+            alert('Please select or drag a meal photo first.');
+            return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '🤖 Analyzing meal photo with AI...';
+        submitBtn.style.opacity = '0.85';
+    });
 }
 
 function setSample(text, mealType) {
