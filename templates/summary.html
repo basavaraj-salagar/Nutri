@@ -226,4 +226,24 @@
         </div>
     </div>
 </div>
+
+<!-- Serial Methodology Navigation Footer -->
+<div class="card" style="margin-top: 1.5rem; background: #f8fafc; border: 1px solid var(--border); padding: 1rem 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <span style="font-size: 0.9rem; font-weight: 700; color: var(--primary-dark);">
+            🔄 Serial Methodology Steps:
+        </span>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <a href="{{ url_for('profile_view') }}" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                👤 Step 1: Profile & Targets
+            </a>
+            <a href="{{ url_for('upload_view') }}" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem; font-weight: 700;">
+                ➕ Step 2: Upload Meal
+            </a>
+            <a href="{{ url_for('database_view') }}" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                🍎 Step 4: Food Database
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}

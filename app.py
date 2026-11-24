@@ -156,7 +156,7 @@ def upload_view():
             meal_type=meal_type,
             image_filename=image_filename,
             today_date=today_date,
-            active_page="upload"
+            active_page="review"
         )
 
     return render_template("upload.html", active_page="upload")

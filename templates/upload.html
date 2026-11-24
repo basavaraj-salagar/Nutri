@@ -6,18 +6,21 @@
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
     <div>
         <h1 style="color: var(--primary-dark); font-size: 1.75rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
-            <span>📸</span> Step 2 & 3: Meal Upload & AI Food Recognition
+            <span>📸</span> Step 2: Upload Meal (Photo or Ingredients)
         </h1>
         <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-            Upload a food photo, snap with your camera, or enter your recipe ingredients to calculate precise calories, macronutrients, and portions.
+            Upload a food photo, snap with your camera, or enter recipe ingredients for automated <strong>Step 3 AI Recognition</strong> & portion estimation.
         </p>
     </div>
-    <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('profile_view') }}" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.82rem;">
+            ⬅ Step 1: Profile
+        </a>
         <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-weight: 700; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 20px;">
             🥗 77+ Foods Seeded
         </span>
         <span class="badge" style="background: var(--secondary-light); color: var(--secondary); font-weight: 700; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 20px;">
-            ⚡ Instant AI Analysis
+            ⚡ Step 3: Instant AI
         </span>
     </div>
 </div>
@@ -351,7 +354,7 @@
             ✏️ Adjust Recipe
         </button>
         <button type="button" id="save_analyzed_meal_btn" class="btn btn-primary" style="padding: 0.75rem 1.75rem; font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;" onclick="saveAnalyzedMealToDiary()">
-            💾 Save Meal to Diary
+            💾 Step 5: Save Meal to Diary (Proceed to Step 6) ➔
         </button>
     </div>
 </div>
@@ -359,14 +362,14 @@
 <!-- ----------------------------------------------------------------------- -->
 <!-- Option C: Quick Search & 1-Click Food Logger (77+ Items) -->
 <!-- ----------------------------------------------------------------------- -->
-<div class="card" style="margin-bottom: 2rem;">
+<div class="card" style="margin-bottom: 1.5rem;">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
         <div>
             <h2 class="card-title" style="font-size: 1.15rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.5rem;">
-                <span>🔍</span> Option C: Quick Search & 1-Click Food Logger (77+ Items)
+                <span>🔍</span> Option C: Step 4 Database 1-Click Logger (77+ Items)
             </h2>
             <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">
-                Instantly search our standard nutrition database and log items without photos or recipes.
+                Instantly search our Step 4 standard nutrition database and log items without photos or recipes.
             </p>
         </div>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -386,6 +389,23 @@
     
     <div id="quick_search_results" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
         <!-- Dynamically populated via /api/search -->
+    </div>
+</div>
+
+<!-- Serial Methodology Navigation Footer -->
+<div class="card" style="margin-bottom: 2rem; background: #f8fafc; border: 1px solid var(--border); padding: 1rem 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <a href="{{ url_for('profile_view') }}" class="btn btn-outline" style="font-weight: 600;">
+            ⬅ Back to Step 1: User Profile
+        </a>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="{{ url_for('database_view') }}" class="btn btn-outline" style="font-weight: 600;">
+                Step 4: Nutrition Database ➔
+            </a>
+            <a href="{{ url_for('summary_view') }}" class="btn btn-primary" style="font-weight: 700;">
+                Proceed to Step 6: Daily Summary ➔
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -848,7 +868,7 @@ function displayNutritionResults(data) {
     const resultsCard = document.getElementById('nutrition_analysis_results');
 
     // Populate Headers
-    document.getElementById('result_dish_title').innerHTML = `🎯 Nutrition Breakdown: <span>${data.dish_name}</span>`;
+    document.getElementById('result_dish_title').innerHTML = `🎯 Step 3 & 5: AI Nutrition Breakdown - <span>${data.dish_name}</span>`;
     document.getElementById('result_dish_subtitle').innerText = `${data.cooking_note} &bull; Total weight: ~${data.total_weight_g}g`;
     document.getElementById('result_category_badge').innerText = currentSelectedCategory;
     document.getElementById('result_method_badge').innerText = data.cooking_method.replace('_', ' ').toUpperCase();

@@ -14,36 +14,80 @@
     <!-- Top Navigation Header -->
     <header class="navbar">
         <div class="nav-container">
-            <a href="{{ url_for('summary_view') }}" class="brand-logo">
+            <a href="{{ url_for('profile_view') }}" class="brand-logo" title="NutriTrack AI System">
                 <span class="logo-icon">🥗</span>
                 <span class="logo-text">Nutri<strong>Track</strong></span>
             </a>
 
             <nav class="nav-links">
-                <a href="{{ url_for('summary_view') }}" class="nav-link {% if active_page == 'summary' %}active{% endif %}">
-                    📊 Summary & Diary
-                </a>
-                <a href="{{ url_for('meals_view') }}" class="nav-link {% if active_page == 'meals' %}active{% endif %}">
-                    🍽️ Meals Menu
-                </a>
-                <a href="{{ url_for('snacks_view') }}" class="nav-link {% if active_page == 'snacks' %}active{% endif %}">
-                    🍿 Snacks Menu
-                </a>
-                <a href="{{ url_for('delivery_view') }}" class="nav-link {% if active_page == 'delivery' %}active{% endif %}" style="background: #f0fdf4; color: #166534; font-weight: 600; border-radius: 8px;">
-                    🛵 Food Delivery <span id="nav_cart_badge" style="background: #22c55e; color: #fff; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; margin-left: 0.25rem;">0</span>
+                <!-- Serial Methodology Steps 1 -> 2 -> 4 -> 6 -->
+                <a href="{{ url_for('profile_view') }}" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
+                    👤 Step 1: Profile
                 </a>
                 <a href="{{ url_for('upload_view') }}" class="nav-link {% if active_page == 'upload' %}active{% endif %}">
-                    📸 Upload Meal
+                    📸 Step 2: Upload
                 </a>
                 <a href="{{ url_for('database_view') }}" class="nav-link {% if active_page == 'database' %}active{% endif %}">
-                    🍎 Food Database
+                    🍎 Step 4: Database
                 </a>
-                <a href="{{ url_for('profile_view') }}" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
-                    👤 Profile & Goals
+                <a href="{{ url_for('summary_view') }}" class="nav-link {% if active_page == 'summary' %}active{% endif %}">
+                    📊 Step 6: Summary
+                </a>
+
+                <!-- Food Menus & Delivery Discovery -->
+                <span style="color: #cbd5e1; display: inline-flex; align-items: center; user-select: none;">|</span>
+                <a href="{{ url_for('meals_view') }}" class="nav-link {% if active_page == 'meals' %}active{% endif %}">
+                    🍽️ Meals
+                </a>
+                <a href="{{ url_for('snacks_view') }}" class="nav-link {% if active_page == 'snacks' %}active{% endif %}">
+                    🍿 Snacks
+                </a>
+                <a href="{{ url_for('delivery_view') }}" class="nav-link {% if active_page == 'delivery' %}active{% endif %}" style="background: #f0fdf4; color: #166534; font-weight: 600; border-radius: 8px;">
+                    🛵 Delivery <span id="nav_cart_badge" style="background: #22c55e; color: #fff; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; margin-left: 0.25rem;">0</span>
                 </a>
             </nav>
         </div>
     </header>
+
+    <!-- Serial Methodology Workflow Stepper (6 Sequential Steps from nutri.py) -->
+    <div class="methodology-stepper-wrapper">
+        <div class="methodology-stepper">
+            <a href="{{ url_for('profile_view') }}" class="step-chip {% if active_page == 'profile' %}active{% endif %}" title="Step 1: User Profile & Goals">
+                <span class="step-badge">1</span>
+                <span class="step-title">User Profile</span>
+            </a>
+            <span class="step-separator">➔</span>
+
+            <a href="{{ url_for('upload_view') }}" class="step-chip {% if active_page == 'upload' %}active{% endif %}" title="Step 2: Upload Meal Photo or Ingredients">
+                <span class="step-badge">2</span>
+                <span class="step-title">Upload Meal</span>
+            </a>
+            <span class="step-separator">➔</span>
+
+            <a href="{{ url_for('upload_view') }}#analyze" class="step-chip {% if active_page == 'upload' %}active{% endif %}" title="Step 3: AI Food Recognition & Portions">
+                <span class="step-badge">3</span>
+                <span class="step-title">AI Recognition</span>
+            </a>
+            <span class="step-separator">➔</span>
+
+            <a href="{{ url_for('database_view') }}" class="step-chip {% if active_page == 'database' %}active{% endif %}" title="Step 4: Nutrition Database & Calories">
+                <span class="step-badge">4</span>
+                <span class="step-title">Nutrition DB</span>
+            </a>
+            <span class="step-separator">➔</span>
+
+            <a href="{{ url_for('upload_view') }}#nutrition_analysis_results" class="step-chip {% if active_page == 'review' or active_page == 'upload' %}active{% endif %}" title="Step 5: User Reviews & Portion Adjustment">
+                <span class="step-badge">5</span>
+                <span class="step-title">User Reviews</span>
+            </a>
+            <span class="step-separator">➔</span>
+
+            <a href="{{ url_for('summary_view') }}" class="step-chip {% if active_page == 'summary' %}active{% endif %}" title="Step 6: Personalized Daily Summary & Recommendations">
+                <span class="step-badge">6</span>
+                <span class="step-title">Daily Summary</span>
+            </a>
+        </div>
+    </div>
 
     <!-- Main Content Container -->
     <main class="main-content">
