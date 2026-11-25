@@ -119,46 +119,6 @@
         </div>
     </header>
 
-    <!-- Serial Methodology Workflow Stepper (6 Sequential Steps from nutri.py) -->
-    <div class="methodology-stepper-wrapper">
-        <div class="methodology-stepper">
-            <a href="{{ url_for('profile_view') }}" class="step-chip {% if active_page == 'profile' %}active{% endif %}" title="Step 1: User Profile & Goals">
-                <span class="step-badge">1</span>
-                <span class="step-title">User Profile</span>
-            </a>
-            <span class="step-separator">➔</span>
-
-            <a href="{{ url_for('upload_view') }}" class="step-chip {% if active_page == 'upload' %}active{% endif %}" title="Step 2: Upload Meal Photo or Ingredients">
-                <span class="step-badge">2</span>
-                <span class="step-title">Upload Meal</span>
-            </a>
-            <span class="step-separator">➔</span>
-
-            <a href="{{ url_for('upload_view') }}#analyze" class="step-chip {% if active_page == 'upload' %}active{% endif %}" title="Step 3: AI Food Recognition & Portions">
-                <span class="step-badge">3</span>
-                <span class="step-title">AI Recognition</span>
-            </a>
-            <span class="step-separator">➔</span>
-
-            <a href="{{ url_for('database_view') }}" class="step-chip {% if active_page == 'database' %}active{% endif %}" title="Step 4: Nutrition Database & Calories">
-                <span class="step-badge">4</span>
-                <span class="step-title">Nutrition DB</span>
-            </a>
-            <span class="step-separator">➔</span>
-
-            <a href="{{ url_for('upload_view') }}#nutrition_analysis_results" class="step-chip {% if active_page == 'review' or active_page == 'upload' %}active{% endif %}" title="Step 5: User Reviews & Portion Adjustment">
-                <span class="step-badge">5</span>
-                <span class="step-title">User Reviews</span>
-            </a>
-            <span class="step-separator">➔</span>
-
-            <a href="{{ url_for('dashboard_view' if is_logged_in else 'summary_view') }}" class="step-chip {% if active_page == 'summary' or active_page == 'dashboard' %}active{% endif %}" title="Step 6: Personalized Daily Summary & Recommendations">
-                <span class="step-badge">6</span>
-                <span class="step-title">Daily Summary</span>
-            </a>
-        </div>
-    </div>
-
     <!-- Main Content Container -->
     <main class="main-content">
         <!-- Flash Messages -->

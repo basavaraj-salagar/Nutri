@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>🤖 Step 3 & 5: AI Food Recognition & User Reviews</h1>
-    <p>Review the AI-detected food items, adjust portion quantities, and confirm meal logging to <strong>Step 6: Daily Summary</strong>.</p>
+    <h1>🤖 Review & Confirm Detected Foods</h1>
+    <p>Review the AI-detected food items, adjust portion quantities, and confirm meal logging to your daily diary.</p>
 </div>
 
 <div class="card">
@@ -122,9 +122,9 @@
             </div>
 
             <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
-                <a href="{{ url_for('upload_view') }}" class="btn btn-outline">⬅ Discard & Back to Step 2</a>
+                <a href="{{ url_for('upload_view') }}" class="btn btn-outline">⬅ Discard & Log Another Meal</a>
                 <button type="submit" class="btn btn-primary" style="font-weight: 700;">
-                    ✅ Confirm & Save to Step 6: Daily Summary ➔
+                    ✅ Confirm & Save Meal to Diary ➔
                 </button>
             </div>
         </div>

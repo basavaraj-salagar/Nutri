@@ -1326,14 +1326,7 @@ def get_user_by_id(user_id):
     cursor.execute("SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,))
     row = cursor.fetchone()
     conn.close()
-    if not row:
-        return None
-    d = dict(row)
-    if "title" in d and "name" not in d:
-        d["name"] = d["title"]
-    elif "name" in d and "title" not in d:
-        d["title"] = d["name"]
-    return d
+    return dict(row) if row else None
 
 
 def get_user_by_email(email):
@@ -1344,14 +1337,7 @@ def get_user_by_email(email):
     cursor.execute("SELECT id, name, email, created_at FROM users WHERE email = ?", (email.lower().strip(),))
     row = cursor.fetchone()
     conn.close()
-    if not row:
-        return None
-    d = dict(row)
-    if "title" in d and "name" not in d:
-        d["name"] = d["title"]
-    elif "name" in d and "title" not in d:
-        d["title"] = d["name"]
-    return d
+    return dict(row) if row else None
 
 
 def reset_user_password(email, new_password):
@@ -1394,15 +1380,15 @@ def get_recipes(category=None, diet_type=None, max_time=None):
     cursor.execute(query, params)
     rows = cursor.fetchall()
     conn.close()
-    result = []
+    recipes = []
     for r in rows:
         d = dict(r)
         if "title" in d and "name" not in d:
             d["name"] = d["title"]
         elif "name" in d and "title" not in d:
             d["title"] = d["name"]
-        result.append(d)
-    return result
+        recipes.append(d)
+    return recipes
 
 
 def match_recipes_by_ingredients(user_ingredients, diet_type=None, category=None, max_time=None):
@@ -1432,6 +1418,10 @@ def match_recipes_by_ingredients(user_ingredients, diet_type=None, category=None
         match_pct = round((match_score / total_ings) * 100) if total_ings > 0 else 0
 
         r_dict = dict(r)
+        if "title" in r_dict and "name" not in r_dict:
+            r_dict["name"] = r_dict["title"]
+        elif "name" in r_dict and "title" not in r_dict:
+            r_dict["title"] = r_dict["name"]
         r_dict["matched_ingredients"] = matched
         r_dict["missing_ingredients"] = missing
         r_dict["match_score"] = match_score
@@ -1501,15 +1491,15 @@ def get_saved_recipes_for_user(user_id):
     """, (user_id,))
     rows = cursor.fetchall()
     conn.close()
-    result = []
+    saved = []
     for r in rows:
         d = dict(r)
         if "title" in d and "name" not in d:
             d["name"] = d["title"]
         elif "name" in d and "title" not in d:
             d["title"] = d["name"]
-        result.append(d)
-    return result
+        saved.append(d)
+    return saved
 
 
 def is_recipe_saved(user_id, recipe_id):
@@ -1549,15 +1539,15 @@ def get_meal_history(user_id=1, search_query=None, start_date=None, end_date=Non
     cursor.execute(query, params)
     rows = cursor.fetchall()
     conn.close()
-    result = []
+    recipes = []
     for r in rows:
         d = dict(r)
         if "title" in d and "name" not in d:
             d["name"] = d["title"]
         elif "name" in d and "title" not in d:
             d["title"] = d["name"]
-        result.append(d)
-    return result
+        recipes.append(d)
+    return recipes
 
 
 def get_meal_details_full(log_id, user_id=None):
@@ -1571,14 +1561,7 @@ def get_meal_details_full(log_id, user_id=None):
         cursor.execute("SELECT * FROM meal_logs WHERE id = ?", (log_id,))
     row = cursor.fetchone()
     conn.close()
-    if not row:
-        return None
-    d = dict(row)
-    if "title" in d and "name" not in d:
-        d["name"] = d["title"]
-    elif "name" in d and "title" not in d:
-        d["title"] = d["name"]
-    return d
+    return dict(row) if row else None
 
 
 def update_meal_log_full(log_id, food_name, quantity, calories, protein, carbs, fat, user_id=None):
@@ -1682,6 +1665,7 @@ def get_nutrition_analytics(user_id=1, days=7):
     cat_map = {r["meal_type"]: round(r["total_cal"] or 0, 1) for r in cat_rows}
     category_labels = ["Breakfast", "Lunch", "Dinner", "Snacks"]
     category_calories = [cat_map.get(lbl, 0.0) for lbl in category_labels]
+
     category_breakdown = {r["meal_type"]: r["count"] for r in cat_rows}
     for lbl in ["Breakfast", "Lunch", "Dinner", "Snack", "Snacks"]:
         if lbl not in category_breakdown:
