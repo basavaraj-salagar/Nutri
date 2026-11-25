@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Nutrition Analytics - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem;">
+    <div>
+        <h1 style="color: var(--primary-dark); font-size: 1.85rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
+            <span>📈</span> Nutrition Analytics & Trends
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+            Comprehensive tracking of your daily calorie intake, macronutrient splits, and progress toward goals.
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center; background: #ffffff; padding: 0.35rem; border-radius: 8px; border: 1px solid var(--border);">
+        <a href="{{ url_for('analytics_view', days=7) }}" class="btn {% if days == 7 %}btn-primary{% else %}btn-outline{% endif %}" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">
+            Last 7 Days
+        </a>
+        <a href="{{ url_for('analytics_view', days=30) }}" class="btn {% if days == 30 %}btn-primary{% else %}btn-outline{% endif %}" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">
+            Last 30 Days
+        </a>
+    </div>
+</div>
+
+<!-- Key Performance Indicators Row -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+    <div class="card" style="padding: 1.25rem; border-left: 4px solid var(--primary); margin: 0;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Avg Daily Calories</span>
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary); margin-top: 0.25rem;">
+            {{ (analytics.total_calories / (analytics.dates|length or 1))|round|int }}
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">kcal</span>
+        </div>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Target: {{ profile.daily_calorie_target|round|int }} kcal</span>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; border-left: 4px solid #2563eb; margin: 0;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Total Protein Intake</span>
+        <div style="font-size: 1.75rem; font-weight: 800; color: #2563eb; margin-top: 0.25rem;">
+            {{ analytics.total_protein|round|int }}
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">g</span>
+        </div>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">{{ ((analytics.total_protein * 4) / ((analytics.total_calories or 1)) * 100)|round|int }}% of total calories</span>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; border-left: 4px solid #d97706; margin: 0;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Total Carbs Intake</span>
+        <div style="font-size: 1.75rem; font-weight: 800; color: #d97706; margin-top: 0.25rem;">
+            {{ analytics.total_carbs|round|int }}
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">g</span>
+        </div>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">{{ ((analytics.total_carbs * 4) / ((analytics.total_calories or 1)) * 100)|round|int }}% of total calories</span>
+    </div>
+
+    <div class="card" style="padding: 1.25rem; border-left: 4px solid #dc2626; margin: 0;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Total Fat Intake</span>
+        <div style="font-size: 1.75rem; font-weight: 800; color: #dc2626; margin-top: 0.25rem;">
+            {{ analytics.total_fat|round|int }}
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">g</span>
+        </div>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">{{ ((analytics.total_fat * 9) / ((analytics.total_calories or 1)) * 100)|round|int }}% of total calories</span>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="grid-2" style="gap: 1.5rem; margin-bottom: 1.75rem;">
+    <!-- Chart 1: Calories vs Target -->
+    <div class="card" style="padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin: 0;">
+                📊 Daily Calories vs Target Line
+            </h3>
+            <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-weight: 600;">
+                Target: {{ profile.daily_calorie_target|round|int }} kcal
+            </span>
+        </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="caloriesVsTargetChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Macronutrient Breakdown (Doughnut) -->
+    <div class="card" style="padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin: 0;">
+                🍩 Macronutrient Energy Split
+            </h3>
+            <span class="badge" style="background: #e0f2fe; color: #0284c7; font-weight: 600;">
+                Period Total
+            </span>
+        </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="macroSplitChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2" style="gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Chart 3: Weekly Calorie & Macro Trends -->
+    <div class="card" style="padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin: 0;">
+                📈 Daily Macronutrient Trends (g)
+            </h3>
+        </div>
+        <div style="height: 260px; position: relative;">
+            <canvas id="macroTrendsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 4: Meals Logged by Category -->
+    <div class="card" style="padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin: 0;">
+                🍽️ Meals by Category
+            </h3>
+        </div>
+        <div style="height: 260px; position: relative;">
+            <canvas id="categoriesBarChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Embedded Analytics Data for Chart.js -->
+<script>
+const analyticsData = {{ analytics|tojson }};
+const targetCalorie = {{ profile.daily_calorie_target|round|int }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dates = analyticsData.dates && analyticsData.dates.length > 0 ? analyticsData.dates : ['Today'];
+    const calories = analyticsData.calories && analyticsData.calories.length > 0 ? analyticsData.calories : [0];
+    const targetLine = dates.map(() => targetCalorie);
+
+    // 1. Calories vs Target
+    const ctx1 = document.getElementById('caloriesVsTargetChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Calories Consumed',
+                    data: calories,
+                    backgroundColor: 'rgba(34, 197, 94, 0.75)',
+                    borderColor: '#166534',
+                    borderWidth: 1.5,
+                    borderRadius: 6
+                },
+                {
+                    label: 'Target (kcal)',
+                    data: targetLine,
+                    type: 'line',
+                    borderColor: '#dc2626',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // 2. Macro Split Doughnut
+    const ctx2 = document.getElementById('macroSplitChart').getContext('2d');
+    const proCal = analyticsData.total_protein * 4;
+    const carbCal = analyticsData.total_carbs * 4;
+    const fatCal = analyticsData.total_fat * 9;
+    new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ['Protein (kcal)', 'Carbohydrates (kcal)', 'Fats (kcal)'],
+            datasets: [{
+                data: [proCal || 1, carbCal || 1, fatCal || 1],
+                backgroundColor: ['#2563eb', '#d97706', '#dc2626'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12 } }
+            }
+        }
+    });
+
+    // 3. Macro Trends Line Chart
+    const ctx3 = document.getElementById('macroTrendsChart').getContext('2d');
+    new Chart(ctx3, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Protein (g)',
+                    data: analyticsData.protein_trend || [],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Carbs (g)',
+                    data: analyticsData.carbs_trend || [],
+                    borderColor: '#d97706',
+                    backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Fat (g)',
+                    data: analyticsData.fat_trend || [],
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // 4. Meals by Category Bar Chart
+    const ctx4 = document.getElementById('categoriesBarChart').getContext('2d');
+    const categories = analyticsData.category_breakdown || { 'Breakfast': 0, 'Lunch': 0, 'Dinner': 0, 'Snack': 0 };
+    new Chart(ctx4, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(categories),
+            datasets: [{
+                label: 'Meals Logged',
+                data: Object.values(categories),
+                backgroundColor: ['#f59e0b', '#22c55e', '#6366f1', '#ec4899'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

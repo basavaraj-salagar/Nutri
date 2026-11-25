@@ -9,6 +9,7 @@ import shutil
 import random
 import tempfile
 from datetime import datetime, date
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def _is_serverless_env():
     """Detect if running in Vercel, AWS Lambda, or a read-only serverless filesystem."""
@@ -166,6 +167,161 @@ def init_db():
             FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
         )
     """)
+
+    # 6. Users Table (Authentication)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # 7. User Profiles Table (Linked to users)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            name TEXT NOT NULL DEFAULT 'User',
+            age INTEGER NOT NULL DEFAULT 25,
+            gender TEXT NOT NULL DEFAULT 'male',
+            height_cm REAL NOT NULL DEFAULT 175.0,
+            weight_kg REAL NOT NULL DEFAULT 70.0,
+            activity_level TEXT NOT NULL DEFAULT 'moderately_active',
+            goal TEXT NOT NULL DEFAULT 'maintenance',
+            diet_preference TEXT NOT NULL DEFAULT 'all',
+            allergies TEXT DEFAULT '',
+            daily_calorie_target REAL NOT NULL DEFAULT 2000.0,
+            daily_protein_target REAL NOT NULL DEFAULT 120.0,
+            daily_carb_target REAL NOT NULL DEFAULT 250.0,
+            daily_fat_target REAL NOT NULL DEFAULT 60.0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    """)
+
+    # 8. Meals Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS meals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL DEFAULT 1,
+            meal_date TEXT NOT NULL,
+            meal_type TEXT NOT NULL,
+            name TEXT NOT NULL,
+            total_calories REAL NOT NULL DEFAULT 0.0,
+            total_protein REAL NOT NULL DEFAULT 0.0,
+            total_carbs REAL NOT NULL DEFAULT 0.0,
+            total_fat REAL NOT NULL DEFAULT 0.0,
+            image_path TEXT,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    """)
+
+    # 9. Meal Items Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS meal_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            meal_id INTEGER NOT NULL,
+            food_name TEXT NOT NULL,
+            serving_size REAL NOT NULL DEFAULT 1.0,
+            serving_unit TEXT NOT NULL DEFAULT 'serving',
+            calories REAL NOT NULL,
+            protein REAL NOT NULL,
+            carbs REAL NOT NULL,
+            fat REAL NOT NULL,
+            FOREIGN KEY (meal_id) REFERENCES meals(id) ON DELETE CASCADE
+        )
+    """)
+
+    # 10. Food Database Table (Standard Indian & Global Foods)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS food_database (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            category TEXT NOT NULL,
+            serving_size REAL NOT NULL DEFAULT 100.0,
+            serving_unit TEXT NOT NULL DEFAULT 'g',
+            calories REAL NOT NULL,
+            protein REAL NOT NULL,
+            carbs REAL NOT NULL,
+            fat REAL NOT NULL,
+            fiber REAL NOT NULL DEFAULT 0.0,
+            diet_type TEXT NOT NULL DEFAULT 'all',
+            image_url TEXT,
+            is_snack INTEGER DEFAULT 0,
+            price REAL DEFAULT 99.0
+        )
+    """)
+
+    # 11. Recipes Table (For Ingredient-Based Suggestions)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            diet_type TEXT NOT NULL,
+            prep_time_mins INTEGER NOT NULL,
+            calories REAL NOT NULL,
+            protein REAL NOT NULL,
+            carbs REAL NOT NULL,
+            fat REAL NOT NULL,
+            ingredients TEXT NOT NULL,
+            instructions TEXT NOT NULL,
+            image_url TEXT
+        )
+    """)
+
+    # 12. Saved Recipes Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS saved_recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            recipe_id INTEGER NOT NULL,
+            saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, recipe_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+        )
+    """)
+
+    # 13. User Preferences Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            dark_mode INTEGER DEFAULT 0,
+            unit_system TEXT DEFAULT 'metric',
+            email_reminders INTEGER DEFAULT 1,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    """)
+
+    # Seed Default User 'Alex Smith' if users table is empty
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        demo_pwd_hash = generate_password_hash("password123")
+        cursor.execute("""
+            INSERT INTO users (id, name, email, password_hash)
+            VALUES (1, 'Alex Smith', 'alex@example.com', ?)
+        """, (demo_pwd_hash,))
+
+        cursor.execute("""
+            INSERT OR REPLACE INTO user_profiles (
+                user_id, name, age, gender, height_cm, weight_kg,
+                activity_level, goal, diet_preference, allergies,
+                daily_calorie_target, daily_protein_target, daily_carb_target, daily_fat_target
+            ) VALUES (1, 'Alex Smith', 28, 'male', 180.0, 78.0, 'moderately_active', 'weight_loss', 'all', '', 2243.5, 140.4, 280.3, 62.3)
+        """)
+
+        cursor.execute("""
+            INSERT OR REPLACE INTO user_preferences (user_id, dark_mode, unit_system, email_reminders)
+            VALUES (1, 0, 'metric', 1)
+        """)
 
     conn.commit()
 
@@ -333,6 +489,110 @@ def init_db():
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, item)
 
+    # Sync foods into food_database table
+    cursor.execute("SELECT COUNT(*) FROM food_database")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT OR IGNORE INTO food_database SELECT * FROM foods")
+
+    # Seed 20 diverse recipes for Ingredient-Based Meal Suggestions
+    cursor.execute("SELECT COUNT(*) FROM recipes")
+    if cursor.fetchone()[0] == 0:
+        seed_recipes = [
+            # Breakfast
+            ("Scrambled Egg Toast", "Breakfast", "non-vegetarian", 15, 280.0, 18.0, 22.0, 14.0,
+             "eggs, bread, butter, black pepper, salt",
+             "1. Whisk eggs with salt and pepper in a bowl.\n2. Melt butter in a non-stick pan over low heat.\n3. Pour in eggs, gently fold with spatula until creamy curds form.\n4. Toast bread slices until golden.\n5. Spoon eggs over toast and serve fresh.",
+             "/static/images/meals/scrambled_eggs.svg"),
+            ("Vegetable Masala Oats", "Breakfast", "vegan", 15, 220.0, 7.0, 38.0, 5.0,
+             "oats, onion, tomato, peas, carrot, green chilies, turmeric, cumin",
+             "1. Heat 1 tsp oil in a pan, add cumin and green chilies.\n2. Sauté chopped onion, carrots, and peas for 3 minutes.\n3. Add chopped tomato, turmeric, and salt.\n4. Add rolled oats and 1.5 cups water.\n5. Simmer for 5-7 minutes until creamy.",
+             "/static/images/meals/veg_pulao.svg"),
+            ("Paneer Bhurji with Paratha", "Breakfast", "vegetarian", 15, 340.0, 20.0, 24.0, 20.0,
+             "paneer, onion, tomato, green chilies, turmeric, cumin, whole wheat flour",
+             "1. Crumble fresh paneer by hand.\n2. Sauté chopped onions, ginger, and green chilies until translucent.\n3. Add tomatoes, turmeric, and chili powder; cook until soft.\n4. Stir in crumbled paneer and cook for 2 minutes.\n5. Garnish with coriander and serve with hot paratha.",
+             "/static/images/meals/paneer_butter_masala.svg"),
+            ("Moong Dal Chilla", "Breakfast", "vegan", 20, 210.0, 14.0, 28.0, 4.0,
+             "moong dal, ginger, green chilies, cumin, coriander, oil",
+             "1. Soak yellow moong dal for 2 hours and grind into a smooth batter with ginger and chilies.\n2. Season with cumin, salt, and fresh coriander.\n3. Pour a ladle of batter onto a hot greased griddle and spread in circles.\n4. Cook both sides until golden and crispy.\n5. Serve with mint chutney.",
+             "/static/images/meals/dosa.svg"),
+            ("Avocado & Egg Toast", "Breakfast", "non-vegetarian", 10, 310.0, 14.0, 26.0, 17.0,
+             "avocado, eggs, whole wheat bread, olive oil, lemon, red chili flakes",
+             "1. Toast bread slices until crisp.\n2. Mash ripe avocado with lemon juice, salt, and pepper.\n3. Fry or poach eggs to your preference.\n4. Spread mashed avocado evenly over toast.\n5. Top with the cooked egg and a pinch of chili flakes.",
+             "/static/images/meals/boiled_eggs.svg"),
+             
+            # Lunch
+            ("Palak Paneer with Brown Rice", "Lunch", "vegetarian", 30, 420.0, 22.0, 48.0, 16.0,
+             "spinach, paneer, garlic, onion, tomato, brown rice, cumin, garam masala",
+             "1. Blanch spinach leaves and puree with green chili.\n2. Sauté garlic, cumin, and onion in a pan until golden.\n3. Add tomatoes and spices; simmer with spinach puree for 5 minutes.\n4. Add lightly pan-seared paneer cubes.\n5. Serve warm over steamed brown rice.",
+             "/static/images/meals/palak_paneer.svg"),
+            ("Grilled Chicken Quinoa Bowl", "Lunch", "non-vegetarian", 25, 450.0, 42.0, 38.0, 14.0,
+             "chicken, quinoa, cucumber, tomato, olive oil, lemon, garlic, oregano",
+             "1. Marinate chicken breast in garlic, lemon, oregano, and olive oil for 10 mins.\n2. Grill chicken for 5-6 minutes per side until cooked through; slice into strips.\n3. Cook quinoa in boiling water for 15 minutes.\n4. Assemble bowl with quinoa, diced cucumbers, tomatoes, and sliced chicken.\n5. Drizzle with extra virgin olive oil.",
+             "/static/images/meals/grilled_chicken_breast.svg"),
+            ("Dal Tadka with Steamed Rice", "Lunch", "vegan", 25, 380.0, 15.0, 65.0, 7.0,
+             "toor dal, rice, tomato, onion, garlic, cumin, turmeric, ghee",
+             "1. Pressure cook toor dal with turmeric and water until soft.\n2. In a small pan, heat ghee, add cumin seeds, chopped garlic, and dried red chilies.\n3. Add chopped onion and tomatoes; cook until fragrant.\n4. Pour aromatic tadka over cooked dal and mix well.\n5. Serve hot alongside steamed basmati rice.",
+             "/static/images/meals/dal_rice.svg"),
+            ("Traditional Chicken Curry with Chapati", "Lunch", "non-vegetarian", 35, 480.0, 38.0, 42.0, 18.0,
+             "chicken, onion, tomato, yogurt, chapati, ginger, garlic, coriander, garam masala",
+             "1. Sauté onions, ginger, and garlic paste in oil until deep golden brown.\n2. Add tomatoes, yogurt, and ground spices; cook until oil separates.\n3. Add chicken pieces and sauté on high heat for 5 minutes.\n4. Add water, cover and simmer for 20 minutes until tender.\n5. Serve with freshly made whole wheat chapatis.",
+             "/static/images/meals/chicken_curry.svg"),
+            ("Rajma Masala (Kidney Bean Curry)", "Lunch", "vegan", 35, 430.0, 16.0, 72.0, 8.0,
+             "kidney beans, rice, onion, tomato, ginger, garlic, cumin, garam masala",
+             "1. Soak kidney beans overnight and boil until completely soft.\n2. Sauté chopped onions, ginger, and garlic until golden.\n3. Add pureed tomatoes and spices, simmering for 10 minutes.\n4. Add boiled kidney beans with their broth and mash a few for thick gravy.\n5. Simmer for 15 minutes; serve hot with rice.",
+             "/static/images/meals/dal_makhani.svg"),
+
+            # Dinner
+            ("Grilled Salmon with Steamed Broccoli", "Dinner", "non-vegetarian", 20, 410.0, 36.0, 10.0, 24.0,
+             "salmon, broccoli, olive oil, garlic, lemon, black pepper, sea salt",
+             "1. Season salmon fillet with sea salt, black pepper, and lemon juice.\n2. Heat olive oil in a skillet and sear salmon for 4 minutes skin-down, flip for 3 minutes.\n3. Steam broccoli florets with minced garlic for 4-5 minutes until bright green.\n4. Plate salmon alongside steamed broccoli.\n5. Finish with fresh lemon wedges.",
+             "/static/images/meals/salmon_fillet.svg"),
+            ("Moong Dal Khichdi with Curd", "Dinner", "vegetarian", 25, 340.0, 14.0, 56.0, 6.0,
+             "moong dal, rice, cumin, turmeric, ginger, curd, ghee",
+             "1. Wash equal parts yellow moong dal and rice.\n2. In a cooker, heat ghee, splutter cumin and ginger.\n3. Add dal, rice, turmeric, salt, and 3.5 cups water.\n4. Cook for 3 whistles until soft and comforting.\n5. Serve piping hot with chilled fresh curd.",
+             "/static/images/meals/khichdi.svg"),
+            ("Tofu & Vegetable Stir-Fry", "Dinner", "vegan", 20, 290.0, 20.0, 18.0, 15.0,
+             "tofu, broccoli, bell pepper, carrot, soy sauce, garlic, sesame oil, ginger",
+             "1. Press firm tofu and cut into bite-sized cubes; pan-sear in sesame oil until golden.\n2. In a wok, toss minced garlic, ginger, broccoli florets, carrots, and bell peppers.\n3. Stir-fry on high heat for 4 minutes until tender-crisp.\n4. Add tofu cubes, low-sodium soy sauce, and a splash of water.\n5. Toss together for 2 minutes and serve warm.",
+             "/static/images/meals/tofu.svg"),
+            ("Chicken Tikka Salad Bowl", "Dinner", "non-vegetarian", 25, 330.0, 38.0, 12.0, 14.0,
+             "chicken, yogurt, lettuce, cucumber, tomato, lemon, mint, chaat masala",
+             "1. Marinate chicken chunks in Greek yogurt, lemon juice, and tikka spices.\n2. Skewer and pan-grill or bake at 200°C for 15 minutes.\n3. Chop crisp lettuce, cucumbers, and cherry tomatoes.\n4. Toss vegetables with mint-yogurt dressing.\n5. Top with hot grilled chicken tikka and a sprinkle of chaat masala.",
+             "/static/images/meals/chicken_tikka.svg"),
+            ("Methi Thepla with Low-Fat Curd", "Dinner", "vegetarian", 20, 280.0, 11.0, 46.0, 6.0,
+             "fenugreek leaves, whole wheat flour, yogurt, sesame seeds, turmeric, curd",
+             "1. Wash and finely chop fresh fenugreek (methi) leaves.\n2. Knead with whole wheat flour, yogurt, turmeric, carom seeds, and salt into a soft dough.\n3. Roll out thin rounds and cook on a tawa with minimal oil until specked golden.\n4. Serve warm with creamy, low-fat fresh curd and mango pickle.",
+             "/static/images/meals/methi_thepla.svg"),
+
+            # Snacks
+            ("Sprouted Moong Chaat", "Snacks", "vegan", 10, 160.0, 11.0, 27.0, 1.0,
+             "sprouted moong, onion, tomato, lemon, green chili, chaat masala, coriander",
+             "1. Steam sprouted moong beans for 4 minutes (or keep raw for extra crunch).\n2. In a mixing bowl, combine with finely chopped onion, tomato, and green chili.\n3. Squeeze fresh lemon juice generously.\n4. Toss with chaat masala and fresh coriander leaves.\n5. Enjoy immediately as a protein-rich snack.",
+             "/static/images/snacks/bhel_puri.svg"),
+            ("Boiled Egg Pepper Chaat", "Snacks", "non-vegetarian", 10, 155.0, 13.0, 2.0, 10.5,
+             "eggs, black pepper, chaat masala, lemon, green chilies, coriander",
+             "1. Hard boil 2 eggs for 9-10 minutes and peel under cold water.\n2. Slice eggs in halves or quarters.\n3. Dust with freshly cracked black pepper and tangy chaat masala.\n4. Drizzle a few drops of fresh lemon juice.\n5. Garnish with chopped coriander.",
+             "/static/images/meals/boiled_eggs.svg"),
+            ("Greek Yogurt Fruit & Nut Bowl", "Snacks", "vegetarian", 5, 220.0, 15.0, 32.0, 4.0,
+             "greek yogurt, apple, banana, almonds, honey",
+             "1. Spoon creamy plain Greek yogurt into a bowl.\n2. Dice fresh apple and banana into bite-sized pieces.\n3. Layer fruits over the yogurt.\n4. Top with crushed raw almonds.\n5. Drizzle 1 teaspoon pure honey on top.",
+             "/static/images/meals/greek_yogurt.svg"),
+            ("Crispy Roasted Chickpeas", "Snacks", "vegan", 15, 180.0, 9.0, 26.0, 4.0,
+             "chickpeas, olive oil, paprika, cumin, garlic powder, sea salt",
+             "1. Drain and thoroughly dry canned or boiled chickpeas with a towel.\n2. Toss with 1 tsp olive oil, smoked paprika, cumin, and sea salt.\n3. Roast in an air fryer or oven at 200°C for 12-15 minutes until crispy.\n4. Let cool slightly for maximum crunch.",
+             "/static/images/snacks/roasted_peanuts.svg"),
+            ("Paneer Tikka Skewers", "Snacks", "vegetarian", 20, 250.0, 16.0, 8.0, 17.0,
+             "paneer, bell pepper, onion, yogurt, ginger, garlic, chaat masala",
+             "1. Cube fresh paneer, capsicum, and onions into 1-inch squares.\n2. Coat in thick yogurt, ginger-garlic paste, and roasted cumin powder.\n3. Thread alternately onto wooden skewers.\n4. Pan-sear on a hot grill pan for 6-8 minutes until charred at edges.\n5. Serve with mint dip.",
+             "/static/images/snacks/paneer_tikka.svg")
+        ]
+        cursor.executemany("""
+            INSERT INTO recipes (
+                title, category, diet_type, prep_time_mins,
+                calories, protein, carbs, fat, ingredients, instructions, image_url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, seed_recipes)
+
     conn.commit()
     conn.close()
 
@@ -382,16 +642,20 @@ def calculate_nutrition_targets(weight_kg, height_cm, age, gender, activity_leve
     }
 
 
-def get_profile():
-    """Fetches user profile, creating default if needed."""
+def get_profile(user_id=1):
+    """Fetches user profile for a given user_id, falling back to legacy single-user table."""
     init_db()
     conn = get_db_connection()
-    profile = conn.execute("SELECT * FROM user_profile WHERE id = 1").fetchone()
+    profile = conn.execute("SELECT * FROM user_profiles WHERE user_id = ?", (user_id,)).fetchone()
+    if not profile:
+        profile = conn.execute("SELECT * FROM user_profile WHERE id = ?", (user_id,)).fetchone()
+    if not profile:
+        profile = conn.execute("SELECT * FROM user_profile WHERE id = 1").fetchone()
     conn.close()
     return profile
 
 
-def save_profile(name, age, gender, height_cm, weight_kg, activity_level, goal, diet_preference):
+def save_profile(name, age, gender, height_cm, weight_kg, activity_level, goal, diet_preference, user_id=1, allergies=""):
     """Updates user profile and recalculates nutrition targets."""
     init_db()
     targets = calculate_nutrition_targets(
@@ -404,28 +668,60 @@ def save_profile(name, age, gender, height_cm, weight_kg, activity_level, goal, 
     )
 
     conn = get_db_connection()
+    # 1. Update user_profiles table
     conn.execute("""
-        UPDATE user_profile SET
-            name = ?,
-            age = ?,
-            gender = ?,
-            height_cm = ?,
-            weight_kg = ?,
-            activity_level = ?,
-            goal = ?,
-            diet_preference = ?,
-            daily_calorie_target = ?,
-            daily_protein_target = ?,
-            daily_carb_target = ?,
-            daily_fat_target = ?,
+        INSERT INTO user_profiles (
+            user_id, name, age, gender, height_cm, weight_kg,
+            activity_level, goal, diet_preference, allergies,
+            daily_calorie_target, daily_protein_target, daily_carb_target, daily_fat_target,
+            updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(user_id) DO UPDATE SET
+            name = excluded.name,
+            age = excluded.age,
+            gender = excluded.gender,
+            height_cm = excluded.height_cm,
+            weight_kg = excluded.weight_kg,
+            activity_level = excluded.activity_level,
+            goal = excluded.goal,
+            diet_preference = excluded.diet_preference,
+            allergies = excluded.allergies,
+            daily_calorie_target = excluded.daily_calorie_target,
+            daily_protein_target = excluded.daily_protein_target,
+            daily_carb_target = excluded.daily_carb_target,
+            daily_fat_target = excluded.daily_fat_target,
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = 1
     """, (
-        name, int(age), gender, float(height_cm), float(weight_kg),
-        activity_level, goal, diet_preference,
+        user_id, name, int(age), gender, float(height_cm), float(weight_kg),
+        activity_level, goal, diet_preference, allergies,
         targets["target_calories"], targets["target_protein"],
         targets["target_carbs"], targets["target_fat"]
     ))
+
+    # 2. Maintain legacy user_profile table for backward compatibility
+    if user_id == 1:
+        conn.execute("""
+            UPDATE user_profile SET
+                name = ?,
+                age = ?,
+                gender = ?,
+                height_cm = ?,
+                weight_kg = ?,
+                activity_level = ?,
+                goal = ?,
+                diet_preference = ?,
+                daily_calorie_target = ?,
+                daily_protein_target = ?,
+                daily_carb_target = ?,
+                daily_fat_target = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = 1
+        """, (
+            name, int(age), gender, float(height_cm), float(weight_kg),
+            activity_level, goal, diet_preference,
+            targets["target_calories"], targets["target_protein"],
+            targets["target_carbs"], targets["target_fat"]
+        ))
     conn.commit()
     conn.close()
     return targets
@@ -569,8 +865,8 @@ def add_custom_food(name, category, serving_size, serving_unit, calories, protei
     return success
 
 
-def log_meal_item(meal_date, meal_type, food_name, quantity, unit, calories, protein, carbs, fat, image_path=None):
-    """Logs a food item into the meal_logs table."""
+def log_meal_item(meal_date, meal_type, food_name, quantity, unit, calories, protein, carbs, fat, image_path=None, user_id=1):
+    """Logs a food item into the meal_logs, meals, and meal_items tables."""
     init_db()
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -578,43 +874,77 @@ def log_meal_item(meal_date, meal_type, food_name, quantity, unit, calories, pro
         INSERT INTO meal_logs (
             user_id, meal_date, meal_type, food_name,
             quantity, unit, calories, protein, carbs, fat, image_path
-        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        meal_date, meal_type, food_name, float(quantity), unit,
+        user_id, meal_date, meal_type, food_name, float(quantity), unit,
         round(float(calories), 1), round(float(protein), 1),
         round(float(carbs), 1), round(float(fat), 1), image_path
     ))
-    conn.commit()
     log_id = cursor.lastrowid
+
+    # Also log to structured meals and meal_items tables
+    try:
+        cursor.execute("""
+            INSERT INTO meals (
+                user_id, meal_date, meal_type, name, total_calories, total_protein, total_carbs, total_fat, image_path
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            user_id, meal_date, meal_type, food_name,
+            round(float(calories), 1), round(float(protein), 1),
+            round(float(carbs), 1), round(float(fat), 1), image_path
+        ))
+        meal_id = cursor.lastrowid
+        cursor.execute("""
+            INSERT INTO meal_items (
+                meal_id, food_name, serving_size, serving_unit, calories, protein, carbs, fat
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            meal_id, food_name, float(quantity), unit,
+            round(float(calories), 1), round(float(protein), 1),
+            round(float(carbs), 1), round(float(fat), 1)
+        ))
+    except Exception:
+        pass
+
+    conn.commit()
     conn.close()
     return log_id
 
 
-def get_logs_for_date(date_str):
-    """Fetches all logged meals for a specific date (YYYY-MM-DD)."""
+def get_logs_for_date(date_str, user_id=None):
+    """Fetches all logged meals for a specific date (YYYY-MM-DD), optionally filtered by user_id."""
     init_db()
     conn = get_db_connection()
-    logs = conn.execute(
-        "SELECT * FROM meal_logs WHERE meal_date = ? ORDER BY id ASC",
-        (date_str,)
-    ).fetchall()
+    if user_id is not None:
+        logs = conn.execute(
+            "SELECT * FROM meal_logs WHERE meal_date = ? AND user_id = ? ORDER BY id ASC",
+            (date_str, user_id)
+        ).fetchall()
+    else:
+        logs = conn.execute(
+            "SELECT * FROM meal_logs WHERE meal_date = ? ORDER BY id ASC",
+            (date_str,)
+        ).fetchall()
     conn.close()
     return logs
 
 
-def delete_log(log_id):
-    """Deletes a meal log item by ID."""
+def delete_log(log_id, user_id=None):
+    """Deletes a meal log item by ID, with optional user_id check."""
     init_db()
     conn = get_db_connection()
-    conn.execute("DELETE FROM meal_logs WHERE id = ?", (log_id,))
+    if user_id is not None:
+        conn.execute("DELETE FROM meal_logs WHERE id = ? AND user_id = ?", (log_id, user_id))
+    else:
+        conn.execute("DELETE FROM meal_logs WHERE id = ?", (log_id,))
     conn.commit()
     conn.close()
 
 
-def get_daily_summary(date_str):
-    """Aggregates consumed calories and macros for a given date."""
-    profile = get_profile()
-    logs = get_logs_for_date(date_str)
+def get_daily_summary(date_str, user_id=1):
+    """Aggregates consumed calories and macros for a given date for user_id."""
+    profile = get_profile(user_id=user_id)
+    logs = get_logs_for_date(date_str, user_id=user_id)
 
     total_calories = sum(log["calories"] for log in logs)
     total_protein = sum(log["protein"] for log in logs)
@@ -928,3 +1258,508 @@ def update_order_status(order_id, new_status):
     conn.execute("UPDATE orders SET status = ? WHERE id = ?", (new_status, order_id))
     conn.commit()
     conn.close()
+
+
+# -------------------------------------------------------------------------
+# User Authentication & Account Management
+# -------------------------------------------------------------------------
+def register_user(name, email, password, diet_preference="all"):
+    """Registers a new user and creates their profile and preferences."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    email_clean = email.lower().strip()
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email_clean,))
+    if cursor.fetchone():
+        conn.close()
+        return None, "An account with this email address already exists."
+
+    pwd_hash = generate_password_hash(password)
+    cursor.execute(
+        "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+        (name.strip(), email_clean, pwd_hash)
+    )
+    user_id = cursor.lastrowid
+
+    # Create associated profile
+    targets = calculate_nutrition_targets(70.0, 175.0, 25, "male", "moderately_active", "maintenance")
+    cursor.execute("""
+        INSERT INTO user_profiles (
+            user_id, name, age, gender, height_cm, weight_kg,
+            activity_level, goal, diet_preference, allergies,
+            daily_calorie_target, daily_protein_target, daily_carb_target, daily_fat_target
+        ) VALUES (?, ?, 25, 'male', 175.0, 70.0, 'moderately_active', 'maintenance', ?, '', ?, ?, ?, ?)
+    """, (
+        user_id, name.strip(), diet_preference,
+        targets["target_calories"], targets["target_protein"], targets["target_carbs"], targets["target_fat"]
+    ))
+
+    # Create associated preferences
+    cursor.execute("""
+        INSERT INTO user_preferences (user_id, dark_mode, unit_system, email_reminders)
+        VALUES (?, 0, 'metric', 1)
+    """, (user_id,))
+
+    conn.commit()
+    conn.close()
+    return user_id, None
+
+
+def authenticate_user(email, password):
+    """Verifies credentials and returns user dict if valid."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE email = ?", (email.lower().strip(),))
+    row = cursor.fetchone()
+    conn.close()
+    if row and check_password_hash(row["password_hash"], password):
+        return dict(row)
+    return None
+
+
+def get_user_by_id(user_id):
+    """Retrieves user record by ID."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    d = dict(row)
+    if "title" in d and "name" not in d:
+        d["name"] = d["title"]
+    elif "name" in d and "title" not in d:
+        d["title"] = d["name"]
+    return d
+
+
+def get_user_by_email(email):
+    """Retrieves user record by email."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, created_at FROM users WHERE email = ?", (email.lower().strip(),))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    d = dict(row)
+    if "title" in d and "name" not in d:
+        d["name"] = d["title"]
+    elif "name" in d and "title" not in d:
+        d["title"] = d["name"]
+    return d
+
+
+def reset_user_password(email, new_password):
+    """Updates password for a user."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    pwd_hash = generate_password_hash(new_password)
+    cursor.execute("UPDATE users SET password_hash = ? WHERE email = ?", (pwd_hash, email.lower().strip()))
+    success = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return success
+
+
+# -------------------------------------------------------------------------
+# Ingredient-Based Meal Suggestions & Recipes
+# -------------------------------------------------------------------------
+def get_recipes(category=None, diet_type=None, max_time=None):
+    """Fetches recipes filtered by category, diet type, and max prep time."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = "SELECT * FROM recipes WHERE 1=1"
+    params = []
+    if category and category != "All":
+        query += " AND category = ?"
+        params.append(category)
+    if diet_type and diet_type != "all":
+        if diet_type == "vegetarian":
+            query += " AND diet_type IN ('vegetarian', 'vegan')"
+        elif diet_type == "vegan":
+            query += " AND diet_type = 'vegan'"
+        elif diet_type in ["non-vegetarian", "non-veg"]:
+            query += " AND diet_type = 'non-vegetarian'"
+    if max_time and int(max_time) > 0:
+        query += " AND prep_time_mins <= ?"
+        params.append(int(max_time))
+    query += " ORDER BY id ASC"
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        d = dict(r)
+        if "title" in d and "name" not in d:
+            d["name"] = d["title"]
+        elif "name" in d and "title" not in d:
+            d["title"] = d["name"]
+        result.append(d)
+    return result
+
+
+def match_recipes_by_ingredients(user_ingredients, diet_type=None, category=None, max_time=None):
+    """
+    Ranks recipes based on matching user's available ingredients.
+    Calculates match count, missing ingredients, and match percentage.
+    """
+    all_recipes = get_recipes(category=category, diet_type=diet_type, max_time=max_time)
+    if not user_ingredients:
+        return all_recipes
+
+    cleaned_input = [ing.lower().strip() for ing in user_ingredients if ing.strip()]
+    ranked = []
+    for r in all_recipes:
+        recipe_ings = [i.strip().lower() for i in r["ingredients"].split(",")]
+        matched = []
+        missing = []
+        for ri in recipe_ings:
+            is_matched = any(ui in ri or ri in ui for ui in cleaned_input)
+            if is_matched:
+                matched.append(ri)
+            else:
+                missing.append(ri)
+
+        match_score = len(matched)
+        total_ings = len(recipe_ings)
+        match_pct = round((match_score / total_ings) * 100) if total_ings > 0 else 0
+
+        r_dict = dict(r)
+        r_dict["matched_ingredients"] = matched
+        r_dict["missing_ingredients"] = missing
+        r_dict["match_score"] = match_score
+        r_dict["match_pct"] = match_pct
+
+        if match_score > 0:
+            ranked.append(r_dict)
+
+    ranked.sort(key=lambda x: (x["match_score"], x["match_pct"]), reverse=True)
+    return ranked if ranked else all_recipes[:6]
+
+
+def get_recipe_by_id(recipe_id):
+    """Gets a recipe by its ID."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM recipes WHERE id = ?", (recipe_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    d = dict(row)
+    if "title" in d and "name" not in d:
+        d["name"] = d["title"]
+    elif "name" in d and "title" not in d:
+        d["title"] = d["name"]
+    return d
+
+
+def save_recipe_for_user(user_id, recipe_id):
+    """Saves a recipe to user's saved_recipes table."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR IGNORE INTO saved_recipes (user_id, recipe_id)
+        VALUES (?, ?)
+    """, (user_id, recipe_id))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def unsave_recipe_for_user(user_id, recipe_id):
+    """Removes a saved recipe for a user."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM saved_recipes WHERE user_id = ? AND recipe_id = ?", (user_id, recipe_id))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def get_saved_recipes_for_user(user_id):
+    """Retrieves all recipes saved by a user."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT r.*, sr.saved_at
+        FROM recipes r
+        JOIN saved_recipes sr ON r.id = sr.recipe_id
+        WHERE sr.user_id = ?
+        ORDER BY sr.saved_at DESC
+    """, (user_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        d = dict(r)
+        if "title" in d and "name" not in d:
+            d["name"] = d["title"]
+        elif "name" in d and "title" not in d:
+            d["title"] = d["name"]
+        result.append(d)
+    return result
+
+
+def is_recipe_saved(user_id, recipe_id):
+    """Checks if a user has already saved a recipe."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM saved_recipes WHERE user_id = ? AND recipe_id = ?", (user_id, recipe_id))
+    row = cursor.fetchone()
+    conn.close()
+    return row is not None
+
+
+# -------------------------------------------------------------------------
+# Meal History & Details Management
+# -------------------------------------------------------------------------
+def get_meal_history(user_id=1, search_query=None, start_date=None, end_date=None, meal_type=None):
+    """Fetches meal logs for a user with search and date/category filters."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = "SELECT * FROM meal_logs WHERE user_id = ?"
+    params = [user_id]
+    if search_query:
+        query += " AND food_name LIKE ?"
+        params.append(f"%{search_query.strip()}%")
+    if start_date:
+        query += " AND meal_date >= ?"
+        params.append(start_date)
+    if end_date:
+        query += " AND meal_date <= ?"
+        params.append(end_date)
+    if meal_type and meal_type != "All":
+        query += " AND meal_type = ?"
+        params.append(meal_type)
+    query += " ORDER BY meal_date DESC, id DESC"
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        d = dict(r)
+        if "title" in d and "name" not in d:
+            d["name"] = d["title"]
+        elif "name" in d and "title" not in d:
+            d["title"] = d["name"]
+        result.append(d)
+    return result
+
+
+def get_meal_details_full(log_id, user_id=None):
+    """Retrieves full details of a specific meal log."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    if user_id is not None:
+        cursor.execute("SELECT * FROM meal_logs WHERE id = ? AND user_id = ?", (log_id, user_id))
+    else:
+        cursor.execute("SELECT * FROM meal_logs WHERE id = ?", (log_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    d = dict(row)
+    if "title" in d and "name" not in d:
+        d["name"] = d["title"]
+    elif "name" in d and "title" not in d:
+        d["title"] = d["name"]
+    return d
+
+
+def update_meal_log_full(log_id, food_name, quantity, calories, protein, carbs, fat, user_id=None):
+    """Updates a meal log's name, quantity, and nutrition values."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    if user_id is not None:
+        cursor.execute("""
+            UPDATE meal_logs
+            SET food_name = ?, quantity = ?, calories = ?, protein = ?, carbs = ?, fat = ?
+            WHERE id = ? AND user_id = ?
+        """, (food_name, float(quantity), float(calories), float(protein), float(carbs), float(fat), log_id, user_id))
+    else:
+        cursor.execute("""
+            UPDATE meal_logs
+            SET food_name = ?, quantity = ?, calories = ?, protein = ?, carbs = ?, fat = ?
+            WHERE id = ?
+        """, (food_name, float(quantity), float(calories), float(protein), float(carbs), float(fat), log_id))
+    success = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return success
+
+
+# -------------------------------------------------------------------------
+# Nutrition Analytics (Chart.js Engine)
+# -------------------------------------------------------------------------
+def get_nutrition_analytics(user_id=1, days=7):
+    """
+    Computes analytics for Chart.js:
+    - Daily calorie intake vs target
+    - Macronutrient distribution (protein, carbs, fat)
+    - Meal category breakdown
+    - Trend averages
+    """
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT daily_calorie_target, daily_protein_target, daily_carb_target, daily_fat_target
+        FROM user_profiles WHERE user_id = ?
+    """, (user_id,))
+    prof_row = cursor.fetchone()
+    if not prof_row:
+        cursor.execute("SELECT daily_calorie_target, daily_protein_target, daily_carb_target, daily_fat_target FROM user_profile LIMIT 1")
+        prof_row = cursor.fetchone()
+
+    cal_target = float(prof_row["daily_calorie_target"]) if prof_row else 2000.0
+    pro_target = float(prof_row["daily_protein_target"]) if prof_row else 120.0
+    carb_target = float(prof_row["daily_carb_target"]) if prof_row else 250.0
+    fat_target = float(prof_row["daily_fat_target"]) if prof_row else 60.0
+
+    from datetime import date, timedelta
+    today = date.today()
+    dates = [(today - timedelta(days=i)).isoformat() for i in range(days - 1, -1, -1)]
+
+    cursor.execute("""
+        SELECT meal_date,
+               SUM(calories) as total_cal,
+               SUM(protein) as total_pro,
+               SUM(carbs) as total_carb,
+               SUM(fat) as total_fat
+        FROM meal_logs
+        WHERE user_id = ? AND meal_date >= ?
+        GROUP BY meal_date
+    """, (user_id, dates[0]))
+    logs_by_date = {row["meal_date"]: dict(row) for row in cursor.fetchall()}
+
+    daily_labels = []
+    calories_data = []
+    target_data = []
+    protein_data = []
+    carbs_data = []
+    fat_data = []
+
+    for d in dates:
+        d_obj = date.fromisoformat(d)
+        daily_labels.append(d_obj.strftime("%a, %b %d"))
+        target_data.append(round(cal_target, 1))
+        if d in logs_by_date:
+            row = logs_by_date[d]
+            calories_data.append(round(row["total_cal"] or 0, 1))
+            protein_data.append(round(row["total_pro"] or 0, 1))
+            carbs_data.append(round(row["total_carb"] or 0, 1))
+            fat_data.append(round(row["total_fat"] or 0, 1))
+        else:
+            calories_data.append(0)
+            protein_data.append(0)
+            carbs_data.append(0)
+            fat_data.append(0)
+
+    # Meal category breakdown
+    cursor.execute("""
+        SELECT meal_type, COUNT(*) as count, SUM(calories) as total_cal
+        FROM meal_logs
+        WHERE user_id = ? AND meal_date >= ?
+        GROUP BY meal_type
+    """, (user_id, dates[0]))
+    cat_rows = cursor.fetchall()
+    cat_map = {r["meal_type"]: round(r["total_cal"] or 0, 1) for r in cat_rows}
+    category_labels = ["Breakfast", "Lunch", "Dinner", "Snacks"]
+    category_calories = [cat_map.get(lbl, 0.0) for lbl in category_labels]
+    category_breakdown = {r["meal_type"]: r["count"] for r in cat_rows}
+    for lbl in ["Breakfast", "Lunch", "Dinner", "Snack", "Snacks"]:
+        if lbl not in category_breakdown:
+            category_breakdown[lbl] = 0
+
+    total_consumed_cals = round(sum(calories_data), 1)
+    active_days = sum(1 for c in calories_data if c > 0) or 1
+    avg_calories = round(total_consumed_cals / active_days, 1)
+    total_protein = round(sum(protein_data), 1)
+    total_carbs = round(sum(carbs_data), 1)
+    total_fat = round(sum(fat_data), 1)
+
+    conn.close()
+
+    return {
+        "dates": dates,
+        "labels": daily_labels,
+        "calories": calories_data,
+        "calorie_target": target_data,
+        "target_val": round(cal_target, 1),
+        "protein_target_val": round(pro_target, 1),
+        "carb_target_val": round(carb_target, 1),
+        "fat_target_val": round(fat_target, 1),
+        "protein": protein_data,
+        "carbs": carbs_data,
+        "fat": fat_data,
+        "protein_trend": protein_data,
+        "carbs_trend": carbs_data,
+        "fat_trend": fat_data,
+        "total_calories": total_consumed_cals,
+        "total_protein": total_protein,
+        "total_carbs": total_carbs,
+        "total_fat": total_fat,
+        "macro_totals": {
+            "protein": total_protein,
+            "carbs": total_carbs,
+            "fat": total_fat
+        },
+        "category_labels": category_labels,
+        "category_calories": category_calories,
+        "category_breakdown": category_breakdown,
+        "avg_calories": avg_calories,
+        "active_days": active_days
+    }
+
+
+# -------------------------------------------------------------------------
+# User Preferences (Dark Mode, Unit System, Settings)
+# -------------------------------------------------------------------------
+def get_user_preferences(user_id=1):
+    """Gets user preferences dict."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM user_preferences WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return dict(row)
+    return {"dark_mode": 0, "unit_system": "metric", "email_reminders": 1}
+
+
+def update_user_preferences(user_id=1, dark_mode=None, unit_system=None, email_reminders=None):
+    """Updates user preferences."""
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM user_preferences WHERE user_id = ?", (user_id,))
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO user_preferences (user_id) VALUES (?)", (user_id,))
+
+    if dark_mode is not None:
+        cursor.execute("UPDATE user_preferences SET dark_mode = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?", (int(dark_mode), user_id))
+    if unit_system is not None:
+        cursor.execute("UPDATE user_preferences SET unit_system = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?", (unit_system, user_id))
+    if email_reminders is not None:
+        cursor.execute("UPDATE user_preferences SET email_reminders = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?", (int(email_reminders), user_id))
+
+    conn.commit()
+    conn.close()
+    return True

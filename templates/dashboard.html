@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NutriTrack AI Nutrition System{% endblock %}
+
+{% block content %}
+<!-- Welcome Header & Date Selector -->
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+            <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-weight: 700; font-size: 0.8rem; padding: 0.3rem 0.75rem; border-radius: 20px;">
+                🚀 Live Health Hub
+            </span>
+            <span style="font-size: 0.82rem; color: var(--text-muted);">Goal: {{ profile.goal|replace('_', ' ')|title }}</span>
+        </div>
+        <h1 style="color: var(--primary-dark); font-size: 1.85rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
+            <span>👋</span> Good day, {{ current_user.name if current_user else profile.name }}!
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.2rem;">
+            Here is your personalized daily nutrition breakdown and progress for <strong>{{ selected_date }}</strong>.
+        </p>
+    </div>
+
+    <!-- Date Picker Form -->
+    <form method="GET" action="{{ url_for('dashboard_view') }}" style="display: flex; gap: 0.5rem; align-items: center; background: var(--card-bg); padding: 0.5rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+        <label for="dash_date" style="font-size: 0.85rem; font-weight: 600; color: var(--text-dark); margin: 0;">Date:</label>
+        <input type="date" id="dash_date" name="date" value="{{ selected_date }}" class="form-control" style="width: auto; padding: 0.35rem 0.6rem; font-size: 0.85rem;" onchange="this.form.submit()">
+    </form>
+</div>
+
+<!-- 4 Key Nutrition Stat Metric Cards -->
+<div class="grid-4" style="margin-bottom: 1.75rem;">
+    <!-- Calories -->
+    <div class="card metric-box" style="border-top: 4px solid var(--primary); padding: 1.25rem 1rem;">
+        <span class="metric-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Calories Consumed</span>
+        <div class="metric-value" style="color: var(--primary); font-size: 2.1rem; font-weight: 800; margin: 0.3rem 0;">
+            {{ summary.total_calories|round|int }}
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            of {{ profile.daily_calorie_target|round|int }} kcal target
+        </div>
+        <div class="progress-bar-container" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; width: {{ [summary.calorie_pct, 100]|min }}%; background: {% if summary.is_surplus %}#ef4444{% else %}var(--primary){% endif %}; transition: width 0.4s ease;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; margin-top: 0.4rem;">
+            <span>{{ summary.unclamped_calorie_pct }}% achieved</span>
+            <span style="color: {% if summary.is_surplus %}#ef4444{% else %}var(--primary){% endif %};">
+                {% if summary.is_surplus %}
+                    +{{ summary.surplus_calories|round|int }} kcal surplus
+                {% else %}
+                    {{ summary.remaining_calories|round|int }} kcal left
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Protein -->
+    <div class="card metric-box" style="border-top: 4px solid var(--secondary); padding: 1.25rem 1rem;">
+        <span class="metric-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Protein</span>
+        <div class="metric-value" style="color: var(--secondary); font-size: 2.1rem; font-weight: 800; margin: 0.3rem 0;">
+            {{ summary.total_protein|round(1) }}g
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            of {{ profile.daily_protein_target|round(1) }}g target
+        </div>
+        <div class="progress-bar-container" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; width: {{ [summary.protein_pct, 100]|min }}%; background: var(--secondary); transition: width 0.4s ease;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; margin-top: 0.4rem;">
+            <span>{{ summary.protein_pct }}% target</span>
+            <span>Muscle repair & tone</span>
+        </div>
+    </div>
+
+    <!-- Carbohydrates -->
+    <div class="card metric-box" style="border-top: 4px solid #3b82f6; padding: 1.25rem 1rem;">
+        <span class="metric-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Carbohydrates</span>
+        <div class="metric-value" style="color: #3b82f6; font-size: 2.1rem; font-weight: 800; margin: 0.3rem 0;">
+            {{ summary.total_carbs|round(1) }}g
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            of {{ profile.daily_carb_target|round(1) }}g target
+        </div>
+        <div class="progress-bar-container" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; width: {{ [summary.carb_pct, 100]|min }}%; background: #3b82f6; transition: width 0.4s ease;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; margin-top: 0.4rem;">
+            <span>{{ summary.carb_pct }}% target</span>
+            <span>Daily energy reserve</span>
+        </div>
+    </div>
+
+    <!-- Fat -->
+    <div class="card metric-box" style="border-top: 4px solid #8b5cf6; padding: 1.25rem 1rem;">
+        <span class="metric-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Healthy Fats</span>
+        <div class="metric-value" style="color: #8b5cf6; font-size: 2.1rem; font-weight: 800; margin: 0.3rem 0;">
+            {{ summary.total_fat|round(1) }}g
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            of {{ profile.daily_fat_target|round(1) }}g target
+        </div>
+        <div class="progress-bar-container" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; width: {{ [summary.fat_pct, 100]|min }}%; background: #8b5cf6; transition: width 0.4s ease;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; margin-top: 0.4rem;">
+            <span>{{ summary.fat_pct }}% target</span>
+            <span>Hormonal balance</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Buttons (Section 5 Requirement) -->
+<div class="card" style="margin-bottom: 2rem; padding: 1.25rem;">
+    <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 0.75rem;">
+        ⚡ Quick Actions
+    </span>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+        <a href="{{ url_for('upload_view') }}" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-weight: 700; text-decoration: none;">
+            <span>📸</span> 1. Analyze Meal Photo
+        </a>
+        <a href="{{ url_for('meal_ideas_view') }}" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-weight: 700; text-decoration: none;">
+            <span>🥘</span> 2. Find Meals from Ingredients
+        </a>
+        <a href="{{ url_for('history_view') }}" class="btn btn-outline" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-weight: 700; text-decoration: none;">
+            <span>📜</span> 3. View Meal History
+        </a>
+        <a href="{{ url_for('profile_view') }}" class="btn btn-outline" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-weight: 700; text-decoration: none;">
+            <span>👤</span> 4. Update Profile & Goals
+        </a>
+    </div>
+</div>
+
+<!-- 2-Column Main Section: Today's Logged Meals & Weekly Analytics Chart -->
+<div class="grid-2" style="gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Left: Today's Consumed Meals Timeline -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">
+                <h2 class="card-title" style="font-size: 1.15rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem;">
+                    <span>🍽️</span> Meals Logged Today ({{ today_logs|length }})
+                </h2>
+                <a href="{{ url_for('upload_view') }}" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.82rem;">
+                    ➕ Log Meal
+                </a>
+            </div>
+
+            {% if today_logs %}
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    {% for log in today_logs %}
+                    <div style="background: var(--bg-light); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-size: 0.75rem; padding: 0.2rem 0.5rem;">{{ log.meal_type }}</span>
+                                <strong style="color: var(--text-dark); font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ log.food_name }}</strong>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;">
+                                <span style="font-weight: 700; color: var(--primary);">{{ log.calories|round|int }} kcal</span> &bull; 
+                                P: {{ log.protein }}g &bull; C: {{ log.carbs }}g &bull; F: {{ log.fat }}g
+                                <span style="color: #94a3b8;">({{ log.quantity }} {{ log.unit }})</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0;">
+                            <a href="{{ url_for('meal_details_view', log_id=log.id) }}" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" title="View Details">
+                                🔍
+                            </a>
+                            <form method="POST" action="{{ url_for('api_delete_meal', log_id=log.id) }}" style="margin: 0;" onsubmit="return confirm('Remove this meal item from your diary?');">
+                                <button type="submit" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--danger); border-color: #fca5a5;" title="Delete">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🥗</div>
+                    <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem;">No meals logged for this date yet.</p>
+                    <p style="font-size: 0.85rem; margin-bottom: 1rem;">Upload a photo or search our 77+ food database to start tracking.</p>
+                    <a href="{{ url_for('upload_view') }}" class="btn btn-primary" style="font-size: 0.88rem; padding: 0.5rem 1.25rem;">
+                        📸 Upload Food Photo
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right: 7-Day Nutrition Chart (Chart.js) -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">
+                <h2 class="card-title" style="font-size: 1.15rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem;">
+                    <span>📈</span> Weekly Calorie Intake (Last 7 Days)
+                </h2>
+                <a href="{{ url_for('analytics_view') }}" style="font-size: 0.82rem; color: var(--primary); font-weight: 700; text-decoration: none;">
+                    Detailed Analytics &rarr;
+                </a>
+            </div>
+
+            <div style="position: relative; height: 260px; width: 100%;">
+                <canvas id="dashboardWeeklyChart"></canvas>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 1rem;">
+            <span>Target: <strong>{{ profile.daily_calorie_target|round|int }} kcal/day</strong></span>
+            <span>7-Day Avg: <strong>{{ analytics.avg_calories }} kcal</strong></span>
+        </div>
+    </div>
+</div>
+
+<!-- Smart Recommendations Section -->
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <div>
+            <h2 class="card-title" style="font-size: 1.15rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem;">
+                <span>💡</span> Intelligent Meal Suggestions for You
+            </h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">
+                Calibrated to help you hit your remaining protein & calorie goals today.
+            </p>
+        </div>
+        <a href="{{ url_for('meal_ideas_view') }}" class="btn btn-outline" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">
+            Explore All Recipes &rarr;
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem;">
+        {% for item in suggestions[:4] %}
+        <div style="background: var(--bg-light); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem;">
+                {% if item.food.image_url %}
+                    <img src="{{ item.food.image_url }}" alt="{{ item.food.name }}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: contain; background: #fff; padding: 3px; border: 1px solid var(--border);" onerror="this.src='/static/images/meals/apple.svg';">
+                {% else %}
+                    <div style="width: 44px; height: 44px; border-radius: 8px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🥗</div>
+                {% endif %}
+                <div style="min-width: 0; flex: 1;">
+                    <strong style="color: var(--text-dark); font-size: 0.88rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.food.name }}</strong>
+                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--primary);">{{ item.food.calories|round|int }} kcal</span>
+                </div>
+            </div>
+
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;">
+                {{ item.reason }}
+            </p>
+
+            <form method="POST" action="{{ url_for('quick_log_view') }}" style="margin: 0;">
+                <input type="hidden" name="food_id" value="{{ item.food.id }}">
+                <input type="hidden" name="meal_type" value="Snack">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; padding: 0.35rem; font-size: 0.78rem; font-weight: 700;">
+                    ➕ Log This to Diary
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('dashboardWeeklyChart');
+    if (!ctx) return;
+
+    const labels = {{ analytics.labels|tojson }};
+    const calories = {{ analytics.calories|tojson }};
+    const target = {{ analytics.target_val }};
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Calories Consumed',
+                    data: calories,
+                    backgroundColor: 'rgba(34, 197, 94, 0.75)',
+                    borderColor: '#16a34a',
+                    borderWidth: 1.5,
+                    borderRadius: 6
+                },
+                {
+                    type: 'line',
+                    label: 'Target (' + target + ' kcal)',
+                    data: Array(labels.length).fill(target),
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { boxWidth: 12, font: { size: 11 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' kcal';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { font: { size: 10 } },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: {
+                    ticks: { font: { size: 10 } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

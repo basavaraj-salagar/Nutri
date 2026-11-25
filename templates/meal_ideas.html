@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Meal Ideas – Ingredient-Based Suggestions – NutriTrack{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+        <h1 style="color: var(--primary-dark); font-size: 1.85rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
+            <span>🥘</span> Ingredient-Based Meal Suggestions
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+            Tell NutriTrack what ingredients you have in your kitchen, and our recipe engine will find healthy meals you can cook right now.
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <a href="{{ url_for('saved_recipes_view') }}" class="btn btn-outline" style="font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+            ⭐ My Saved Recipes
+        </a>
+    </div>
+</div>
+
+<!-- Ingredient Input & Filter Controls Card -->
+<div class="card" style="margin-bottom: 2rem; border-top: 4px solid var(--secondary);">
+    <div class="card-header" style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <h2 class="card-title" style="font-size: 1.15rem; color: var(--primary-dark); display: flex; align-items: center; gap: 0.4rem;">
+            <span>🛒</span> 1. Select Available Ingredients
+        </h2>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Click chips or type below</span>
+    </div>
+
+    <!-- Clickable Ingredient Chips -->
+    <div style="margin-bottom: 1.25rem;">
+        <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">
+            Popular Kitchen Staples (Click to Add):
+        </span>
+        <div id="popular_ingredient_chips" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button type="button" class="chip" onclick="toggleIngredientChip('rice', this)">🍚 Rice</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('chicken', this)">🍗 Chicken</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('eggs', this)">🍳 Eggs</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('paneer', this)">🧀 Paneer</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('onion', this)">🧅 Onion</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('tomato', this)">🍅 Tomato</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('spinach', this)">🥬 Spinach</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('oats', this)">🥣 Oats</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('broccoli', this)">🥦 Broccoli</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('dal', this)">🍲 Dal</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('bread', this)">🍞 Bread</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('avocado', this)">🥑 Avocado</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('salmon', this)">🐟 Salmon</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('tofu', this)">🧈 Tofu</button>
+            <button type="button" class="chip" onclick="toggleIngredientChip('chickpeas', this)">🧆 Chickpeas</button>
+        </div>
+    </div>
+
+    <!-- Selected Ingredients Tags Display & Custom Input -->
+    <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="custom_ingredient_input" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem; display: block;">
+            Your Selected Ingredients List:
+        </label>
+        <div id="selected_tags_box" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.6rem; min-height: 36px; padding: 0.5rem; background: var(--bg-light); border: 1px dashed var(--border); border-radius: 8px;">
+            <span id="no_ingredients_placeholder" style="font-size: 0.82rem; color: var(--text-muted); align-self: center;">No ingredients selected yet. Click any chip above or type below!</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="custom_ingredient_input" class="form-control" placeholder="Type custom ingredient (e.g. mushrooms, garlic, quinoa) and click Add..." style="flex: 1;" onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addCustomIngredient(); }">
+            <button type="button" class="btn btn-outline" onclick="addCustomIngredient()" style="padding: 0.6rem 1rem; font-weight: 600;">
+                ➕ Add
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters Row: Diet, Category, Prep Time -->
+    <div class="grid-3" style="gap: 1rem; margin-bottom: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+        <div>
+            <label for="diet_filter" style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem; display: block;">
+                Dietary Preference:
+            </label>
+            <select id="diet_filter" class="form-control" style="font-size: 0.85rem;">
+                <option value="all">All Diets</option>
+                <option value="vegetarian">Vegetarian Only</option>
+                <option value="vegan">Vegan Only</option>
+                <option value="non-vegetarian">Non-Vegetarian Only</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="category_filter" style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem; display: block;">
+                Meal Category:
+            </label>
+            <select id="category_filter" class="form-control" style="font-size: 0.85rem;">
+                <option value="All">All Categories</option>
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Dinner">Dinner</option>
+                <option value="Snacks">Snacks</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="prep_time_filter" style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem; display: block;">
+                Max Preparation Time:
+            </label>
+            <select id="prep_time_filter" class="form-control" style="font-size: 0.85rem;">
+                <option value="60">Any Time (Up to 60 mins)</option>
+                <option value="15">⚡ Super Quick (≤ 15 mins)</option>
+                <option value="25">⏱️ Medium (≤ 25 mins)</option>
+                <option value="35">🍲 Leisurely (≤ 35 mins)</option>
+            </select>
+        </div>
+    </div>
+
+    <button type="button" id="generate_btn" class="btn btn-secondary" style="width: 100%; padding: 0.85rem; font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);" onclick="generateMealSuggestions()">
+        <span>⚡</span> Generate Meal Suggestions
+    </button>
+</div>
+
+<!-- Results Header & Recipe Cards Grid -->
+<div id="recipe_results_header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 style="color: var(--primary-dark); font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+        <span>🍽️</span> Recommended Recipes (<span id="results_count">{{ recipes|length }}</span>)
+    </h2>
+    <span style="font-size: 0.82rem; color: var(--text-muted);">
+        Ranked by matching kitchen ingredients
+    </span>
+</div>
+
+<!-- Recipes Grid Container -->
+<div id="recipes_grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+    {% for r in recipes %}
+    <div class="card recipe-card" style="display: flex; flex-direction: column; justify-content: space-between; border-top: 3px solid var(--primary); transition: transform 0.2s ease, box-shadow 0.2s ease;">
+        <div>
+            <!-- Header with Image & Badges -->
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.85rem;">
+                <img src="{{ r.image_url }}" alt="{{ r.title }}" style="width: 60px; height: 60px; border-radius: 10px; object-fit: contain; background: #fff; padding: 4px; border: 1px solid var(--border);" onerror="this.src='/static/images/meals/apple.svg';">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 3px;">
+                        <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-size: 0.72rem; padding: 0.15rem 0.45rem;">{{ r.category }}</span>
+                        <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.72rem; padding: 0.15rem 0.45rem;">⏱️ {{ r.prep_time_mins }}m</span>
+                        <span class="badge" style="background: {% if r.diet_type == 'vegan' %}#dcfce7; color: #15803d;{% elif r.diet_type == 'vegetarian' %}#e0e7ff; color: #3730a3;{% else %}#fee2e2; color: #991b1b;{% endif %} font-size: 0.72rem; padding: 0.15rem 0.45rem;">{{ r.diet_type|title }}</span>
+                    </div>
+                    <h3 style="font-size: 1.05rem; color: var(--text-dark); font-weight: 700; margin: 0; line-height: 1.3;">{{ r.title }}</h3>
+                </div>
+            </div>
+
+            <!-- Macros Bar -->
+            <div style="background: var(--bg-light); border-radius: 8px; padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.75rem;">
+                <span style="font-weight: 700; color: var(--primary);">{{ r.calories|round|int }} kcal</span>
+                <span>P: <strong>{{ r.protein }}g</strong></span>
+                <span>C: <strong>{{ r.carbs }}g</strong></span>
+                <span>F: <strong>{{ r.fat }}g</strong></span>
+            </div>
+
+            <!-- Ingredients summary -->
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+                <strong style="color: var(--text-dark);">Ingredients:</strong> {{ r.ingredients }}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 0.4rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+            <button type="button" class="btn btn-outline" style="flex: 1; padding: 0.45rem; font-size: 0.82rem; font-weight: 600;" onclick="openRecipeModal({{ r|tojson }})">
+                📖 View Recipe
+            </button>
+            <button type="button" id="save_btn_{{ r.id }}" class="btn btn-outline" style="padding: 0.45rem 0.65rem; font-size: 0.82rem; color: {% if r.id in saved_ids %}#f59e0b{% else %}var(--text-muted){% endif %};" onclick="toggleSaveRecipe({{ r.id }})" title="Save Recipe">
+                {% if r.id in saved_ids %}⭐ Saved{% else %}☆ Save{% endif %}
+            </button>
+            <form method="POST" action="{{ url_for('api_save_analyzed_meal') }}" style="margin: 0;">
+                <input type="hidden" name="dish_name" value="{{ r.title }}">
+                <input type="hidden" name="meal_type" value="{{ r.category }}">
+                <input type="hidden" name="calories" value="{{ r.calories }}">
+                <input type="hidden" name="protein" value="{{ r.protein }}">
+                <input type="hidden" name="carbs" value="{{ r.carbs }}">
+                <input type="hidden" name="fat" value="{{ r.fat }}">
+                <input type="hidden" name="serving_description" value="1 recipe portion">
+                <button type="submit" class="btn btn-primary" style="padding: 0.45rem 0.75rem; font-size: 0.82rem; font-weight: 700;" title="Log this meal to today's diary">
+                    ➕ Eat This
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal Overlay for Full Recipe Instructions -->
+<div id="recipe_modal_overlay" class="modal-overlay" onclick="if(event.target === this) closeRecipeModal();">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <img id="modal_recipe_img" src="" alt="Recipe" style="width: 50px; height: 50px; border-radius: 8px; object-fit: contain; background: #fff; padding: 3px; border: 1px solid var(--border);">
+                <div>
+                    <h3 id="modal_recipe_title" style="margin: 0; font-size: 1.25rem; color: var(--primary-dark); font-weight: 800;"></h3>
+                    <div style="display: flex; gap: 0.4rem; margin-top: 2px;">
+                        <span id="modal_recipe_category" class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-size: 0.75rem;"></span>
+                        <span id="modal_recipe_time" class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.75rem;"></span>
+                    </div>
+                </div>
+            </div>
+            <button type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);" onclick="closeRecipeModal()">&times;</button>
+        </div>
+
+        <!-- Macro Strip -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center; background: var(--bg-light); padding: 0.75rem; border-radius: 8px; margin-bottom: 1.25rem;">
+            <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Calories</span>
+                <strong id="modal_recipe_cals" style="color: var(--primary); font-size: 1rem;"></strong>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Protein</span>
+                <strong id="modal_recipe_pro" style="color: var(--secondary); font-size: 1rem;"></strong>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Carbs</span>
+                <strong id="modal_recipe_carbs" style="color: #3b82f6; font-size: 1rem;"></strong>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Fat</span>
+                <strong id="modal_recipe_fat" style="color: #8b5cf6; font-size: 1rem;"></strong>
+            </div>
+        </div>
+
+        <!-- Ingredients Checklist -->
+        <div style="margin-bottom: 1.25rem;">
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.4rem;">🥘 Ingredients:</h4>
+            <div id="modal_recipe_ingredients" style="background: var(--bg-light); border-radius: 8px; padding: 0.75rem; font-size: 0.88rem; line-height: 1.5;"></div>
+        </div>
+
+        <!-- Step-by-Step Instructions -->
+        <div style="margin-bottom: 1.5rem;">
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.4rem;">👩‍🍳 Step-by-Step Instructions:</h4>
+            <div id="modal_recipe_instructions" style="white-space: pre-line; line-height: 1.6; font-size: 0.88rem; color: var(--text-dark);"></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="btn btn-outline" onclick="closeRecipeModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedIngredients = [];
+
+function toggleIngredientChip(ingName, btn) {
+    const idx = selectedIngredients.indexOf(ingName);
+    if (idx > -1) {
+        selectedIngredients.splice(idx, 1);
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.borderColor = '';
+    } else {
+        selectedIngredients.push(ingName);
+        btn.style.background = 'var(--primary)';
+        btn.style.color = '#ffffff';
+        btn.style.borderColor = 'var(--primary)';
+    }
+    renderSelectedTags();
+}
+
+function addCustomIngredient() {
+    const input = document.getElementById('custom_ingredient_input');
+    const val = input.value.trim().toLowerCase();
+    if (!val) return;
+    if (!selectedIngredients.includes(val)) {
+        selectedIngredients.push(val);
+        renderSelectedTags();
+    }
+    input.value = '';
+}
+
+function removeIngredientTag(ingName) {
+    const idx = selectedIngredients.indexOf(ingName);
+    if (idx > -1) {
+        selectedIngredients.splice(idx, 1);
+        renderSelectedTags();
+        // Also un-highlight chip if exists
+        document.querySelectorAll('#popular_ingredient_chips .chip').forEach(btn => {
+            if (btn.innerText.toLowerCase().includes(ingName)) {
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            }
+        });
+    }
+}
+
+function renderSelectedTags() {
+    const box = document.getElementById('selected_tags_box');
+    if (selectedIngredients.length === 0) {
+        box.innerHTML = '<span id="no_ingredients_placeholder" style="font-size: 0.82rem; color: var(--text-muted); align-self: center;">No ingredients selected yet. Click any chip above or type below!</span>';
+        return;
+    }
+    box.innerHTML = selectedIngredients.map(ing => `
+        <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-size: 0.82rem; padding: 0.35rem 0.65rem; border-radius: 14px; display: inline-flex; align-items: center; gap: 0.4rem;">
+            ${ing}
+            <button type="button" style="background: none; border: none; cursor: pointer; color: #dc2626; font-weight: 800; font-size: 0.9rem;" onclick="removeIngredientTag('${ing}')">&times;</button>
+        </span>
+    `).join('');
+}
+
+function generateMealSuggestions() {
+    const btn = document.getElementById('generate_btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> Searching matching recipes...';
+
+    const payload = {
+        ingredients: selectedIngredients,
+        diet_type: document.getElementById('diet_filter').value,
+        category: document.getElementById('category_filter').value,
+        max_time: parseInt(document.getElementById('prep_time_filter').value)
+    };
+
+    fetch('/api/suggest-meals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(resp => {
+        btn.disabled = false;
+        btn.innerHTML = '<span>⚡</span> Generate Meal Suggestions';
+
+        if (resp.success && resp.recipes) {
+            renderRecipeGrid(resp.recipes);
+            showToast(`Found ${resp.recipes.length} recipes for your ingredients!`, 'success');
+        } else {
+            showToast('No matching recipes found. Try adding more ingredients.', 'warning');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<span>⚡</span> Generate Meal Suggestions';
+        showToast('Error generating meal suggestions.', 'error');
+        console.error(err);
+    });
+}
+
+function renderRecipeGrid(recipes) {
+    document.getElementById('results_count').innerText = recipes.length;
+    const grid = document.getElementById('recipes_grid');
+    if (recipes.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);"><p>No recipes matched those ingredients. Try adding more items!</p></div>';
+        return;
+    }
+
+    grid.innerHTML = recipes.map(r => {
+        const matchHtml = r.match_score !== undefined ? `
+            <div style="margin-bottom: 0.5rem; font-size: 0.75rem;">
+                <span class="badge" style="background: #ecfdf5; color: #047857; font-weight: 700;">
+                    ✓ ${r.match_score} ingredients matched (${r.match_pct}%)
+                </span>
+            </div>
+        ` : '';
+
+        return `
+        <div class="card recipe-card" style="display: flex; flex-direction: column; justify-content: space-between; border-top: 3px solid var(--primary);">
+            <div>
+                <div style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.85rem;">
+                    <img src="${r.image_url}" alt="${r.title}" style="width: 60px; height: 60px; border-radius: 10px; object-fit: contain; background: #fff; padding: 4px; border: 1px solid var(--border);" onerror="this.src='/static/images/meals/apple.svg';">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 3px;">
+                            <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-size: 0.72rem; padding: 0.15rem 0.45rem;">${r.category}</span>
+                            <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.72rem; padding: 0.15rem 0.45rem;">⏱️ ${r.prep_time_mins}m</span>
+                        </div>
+                        <h3 style="font-size: 1.05rem; color: var(--text-dark); font-weight: 700; margin: 0; line-height: 1.3;">${r.title}</h3>
+                    </div>
+                </div>
+
+                ${matchHtml}
+
+                <div style="background: var(--bg-light); border-radius: 8px; padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.75rem;">
+                    <span style="font-weight: 700; color: var(--primary);">${Math.round(r.calories)} kcal</span>
+                    <span>P: <strong>${r.protein}g</strong></span>
+                    <span>C: <strong>${r.carbs}g</strong></span>
+                    <span>F: <strong>${r.fat}g</strong></span>
+                </div>
+
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+                    <strong style="color: var(--text-dark);">Ingredients:</strong> ${r.ingredients}
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.4rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+                <button type="button" class="btn btn-outline" style="flex: 1; padding: 0.45rem; font-size: 0.82rem; font-weight: 600;" onclick='openRecipeModal(${JSON.stringify(r).replace(/'/g, "&apos;")})'>
+                    📖 View Recipe
+                </button>
+                <button type="button" id="save_btn_${r.id}" class="btn btn-outline" style="padding: 0.45rem 0.65rem; font-size: 0.82rem; color: ${r.is_saved ? '#f59e0b' : 'var(--text-muted)'};" onclick="toggleSaveRecipe(${r.id})" title="Save Recipe">
+                    ${r.is_saved ? '⭐ Saved' : '☆ Save'}
+                </button>
+                <form method="POST" action="/api/save-analyzed-meal" style="margin: 0;">
+                    <input type="hidden" name="dish_name" value="${r.title}">
+                    <input type="hidden" name="meal_type" value="${r.category}">
+                    <input type="hidden" name="calories" value="${r.calories}">
+                    <input type="hidden" name="protein" value="${r.protein}">
+                    <input type="hidden" name="carbs" value="${r.carbs}">
+                    <input type="hidden" name="fat" value="${r.fat}">
+                    <input type="hidden" name="serving_description" value="1 recipe portion">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.45rem 0.75rem; font-size: 0.82rem; font-weight: 700;">
+                        ➕ Eat This
+                    </button>
+                </form>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+function openRecipeModal(recipe) {
+    document.getElementById('modal_recipe_title').innerText = recipe.title;
+    document.getElementById('modal_recipe_img').src = recipe.image_url;
+    document.getElementById('modal_recipe_category').innerText = recipe.category;
+    document.getElementById('modal_recipe_time').innerText = `⏱️ ${recipe.prep_time_mins} mins`;
+    document.getElementById('modal_recipe_cals').innerText = Math.round(recipe.calories) + ' kcal';
+    document.getElementById('modal_recipe_pro').innerText = recipe.protein + 'g';
+    document.getElementById('modal_recipe_carbs').innerText = recipe.carbs + 'g';
+    document.getElementById('modal_recipe_fat').innerText = recipe.fat + 'g';
+    document.getElementById('modal_recipe_ingredients').innerText = recipe.ingredients;
+    document.getElementById('modal_recipe_instructions').innerText = recipe.instructions;
+
+    document.getElementById('recipe_modal_overlay').classList.add('active');
+}
+
+function closeRecipeModal() {
+    document.getElementById('recipe_modal_overlay').classList.remove('active');
+}
+
+function toggleSaveRecipe(recipeId) {
+    fetch('/api/save-recipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipe_id: recipeId })
+    })
+    .then(res => res.json())
+    .then(resp => {
+        if (resp.success) {
+            const btn = document.getElementById('save_btn_' + recipeId);
+            if (btn) {
+                btn.innerHTML = resp.saved ? '⭐ Saved' : '☆ Save';
+                btn.style.color = resp.saved ? '#f59e0b' : 'var(--text-muted)';
+            }
+            showToast(resp.message, 'success');
+        }
+    })
+    .catch(() => showToast('Error saving recipe.', 'error'));
+}
+</script>
+{% endblock %}

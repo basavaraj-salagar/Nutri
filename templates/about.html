@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}About NutriTrack - AI-Based Nutrition Tracking{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding-bottom: 3rem;">
+    <!-- Hero Section -->
+    <div style="text-align: center; padding: 2.5rem 1rem; margin-bottom: 2rem;">
+        <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-size: 0.9rem; font-weight: 700; padding: 0.4rem 1rem; border-radius: 20px; margin-bottom: 1rem; display: inline-block;">
+            🌿 AI-Powered Health & Wellness
+        </span>
+        <h1 style="color: var(--primary-dark); font-size: 2.6rem; font-weight: 800; line-height: 1.2; margin-bottom: 0.75rem;">
+            NutriTrack
+        </h1>
+        <p style="font-size: 1.25rem; color: var(--primary); font-weight: 600; margin-bottom: 1rem;">
+            Eat Smart. Track Better. Live Healthy.
+        </p>
+        <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 680px; margin: 0 auto; line-height: 1.6;">
+            NutriTrack is an intelligent food recognition and nutrition tracking web platform designed to simplify healthy living through computer vision AI, tailored macro targets, and ingredient-based meal suggestions.
+        </p>
+    </div>
+
+    <!-- The 6-Step Methodology Card -->
+    <div class="card" style="padding: 2rem; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 1.5rem; text-align: center;">
+            🚀 The 6-Step NutriTrack Methodology
+        </h2>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            <div style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; border-left: 4px solid var(--primary);">
+                <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">👤 Step 1</div>
+                <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.35rem;">User Profile & Targets</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">
+                    Calculates BMR & TDEE using the Mifflin-St Jeor formula to determine personalized daily caloric and macronutrient targets.
+                </p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; border-left: 4px solid #22c55e;">
+                <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">📸 Step 2</div>
+                <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.35rem;">Meal Upload</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">
+                    Upload food photos via drag-and-drop, camera snap, or manual ingredient list entry with meal category tagging.
+                </p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; border-left: 4px solid #0284c7;">
+                <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">🤖 Step 3</div>
+                <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.35rem;">AI Food Recognition</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">
+                    Automated computer vision detects multiple food items on the plate and estimates portion size and confidence.
+                </p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; border-left: 4px solid #d97706;">
+                <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">🥗 Step 4</div>
+                <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.35rem;">Nutrition Database</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">
+                    77+ Indian and continental dishes with exact macros (calories, protein, carbs, fats) per standard serving unit.
+                </p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; border-left: 4px solid #7c3aed;">
+                <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">✏️ Step 5</div>
+                <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.35rem;">User Reviews & Edits</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">
+                    Transparent confirmation interface allowing users to adjust portion sizes, add missed items, or swap ingredients.
+                </p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; border-left: 4px solid #ec4899;">
+                <div style="font-size: 1.4rem; margin-bottom: 0.5rem;">📊 Step 6</div>
+                <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.35rem;">Daily Summary & AI Ideas</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">
+                    Interactive charts, remaining calorie alerts, and smart ingredient-based recipe suggestions for dinner or next meals.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Stack Highlights -->
+    <div class="card" style="padding: 2rem; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 1.25rem;">
+            🛠️ Architecture & Technology Stack
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.25rem;">Backend</strong>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Python Flask &bull; RESTful Endpoints &bull; Werkzeug Password Hashing</p>
+            </div>
+            <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.25rem;">Database</strong>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">SQLite 3 &bull; Multi-table relational schema &bull; Seeded recipes</p>
+            </div>
+            <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.25rem;">Frontend</strong>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">HTML5 &bull; Vanilla CSS3 &bull; JavaScript &bull; Chart.js 4+ &bull; Lucide</p>
+            </div>
+            <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.25rem;">AI Vision</strong>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Pillow image processing &bull; Multi-feature food recognition &bull; Confidence scoring</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disclaimer & Ethics Notice -->
+    <div class="card" style="padding: 1.5rem; background: #fefce8; border: 1px solid #fef08a;">
+        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <span style="font-size: 1.5rem;">⚠️</span>
+            <div>
+                <h4 style="color: #854d0e; font-weight: 700; margin-bottom: 0.35rem;">Transparent Nutrition Estimation Disclaimer</h4>
+                <p style="color: #713f12; font-size: 0.875rem; margin: 0; line-height: 1.5;">
+                    Nutritional values and AI predictions provided by NutriTrack are scientific estimates calculated from standard reference food data and computer vision models. Cooking methods, brands, and variations will influence exact numbers. NutriTrack is intended for general fitness and informational purposes and does not substitute for licensed clinical medical or dietary consultation.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -4,8 +4,16 @@ Main Flask Application with SQLite integration, AI food recognition, and persona
 """
 
 import os
+import io
+import csv
+import json
+import tempfile
 from datetime import date
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from functools import wraps
+from flask import (
+    Flask, render_template, request, redirect, url_for,
+    flash, jsonify, send_from_directory, session, Response
+)
 from werkzeug.utils import secure_filename
 
 import database
@@ -15,8 +23,31 @@ import ai_service
 app = Flask(__name__)
 app.secret_key = "nutritrack_super_secret_key_change_in_production"
 
-# Configure Uploads
-import tempfile
+# Context processor to inject user context into all templates
+@app.context_processor
+def inject_user_context():
+    user_id = session.get("user_id")
+    current_user = None
+    user_pref = {"dark_mode": 0, "unit_system": "metric", "email_reminders": 1}
+    if user_id:
+        current_user = database.get_user_by_id(user_id)
+        user_pref = database.get_user_preferences(user_id)
+    return {
+        "current_user": current_user,
+        "is_logged_in": current_user is not None,
+        "user_pref": user_pref,
+        "today_date": date.today().isoformat()
+    }
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Please log in to access this page.", "warning")
+            return redirect(url_for("login_view", next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def _is_serverless_env():
     serverless_vars = (
@@ -70,6 +101,7 @@ def profile_view():
     Step 1: User Profile
     Displays user data, handles BMR/TDEE calculations, and updates SQLite.
     """
+    user_id = session.get("user_id", 1)
     if request.method == "POST":
         name = request.form.get("name", "User")
         age = request.form.get("age", 25)
@@ -79,6 +111,7 @@ def profile_view():
         activity_level = request.form.get("activity_level", "moderately_active")
         goal = request.form.get("goal", "maintenance")
         diet_preference = request.form.get("diet_preference", "all")
+        allergies = request.form.get("allergies", "")
 
         try:
             database.save_profile(
@@ -89,7 +122,9 @@ def profile_view():
                 weight_kg=float(weight_kg),
                 activity_level=activity_level,
                 goal=goal,
-                diet_preference=diet_preference
+                diet_preference=diet_preference,
+                user_id=user_id,
+                allergies=allergies
             )
             flash("✅ Profile and daily nutrition targets updated successfully!", "success")
         except Exception as e:
@@ -97,7 +132,7 @@ def profile_view():
 
         return redirect(url_for("profile_view"))
 
-    profile = database.get_profile()
+    profile = database.get_profile(user_id=user_id)
     return render_template("profile.html", profile=profile, active_page="profile")
 
 
@@ -213,6 +248,7 @@ def api_save_analyzed_meal():
     except (ValueError, TypeError):
         return jsonify({"success": False, "error": "Invalid nutrition numbers."}), 400
 
+    user_id = session.get("user_id", 1)
     log_id = database.log_meal_item(
         meal_date=meal_date,
         meal_type=meal_type,
@@ -223,7 +259,8 @@ def api_save_analyzed_meal():
         protein=total_protein,
         carbs=total_carbs,
         fat=total_fat,
-        image_path=image_path
+        image_path=image_path,
+        user_id=user_id
     )
 
     if request.is_json:
@@ -254,6 +291,7 @@ def save_meal_view():
         image_path = request.form.get("image_path", None)
 
         saved_count = 0
+        user_id = session.get("user_id", 1)
         for i in range(total_items):
             food_name = request.form.get(f"food_name_{i}")
             if not food_name:
@@ -276,7 +314,8 @@ def save_meal_view():
                 protein=protein,
                 carbs=carbs,
                 fat=fat,
-                image_path=image_path
+                image_path=image_path,
+                user_id=user_id
             )
             saved_count += 1
 
@@ -372,6 +411,7 @@ def quick_log_view():
         carb = round(food["carbs"] * quantity, 1)
         fat = round(food["fat"] * quantity, 1)
 
+        user_id = session.get("user_id", 1)
         database.log_meal_item(
             meal_date=today_date,
             meal_type=meal_type,
@@ -381,7 +421,8 @@ def quick_log_view():
             calories=cal,
             protein=pro,
             carbs=carb,
-            fat=fat
+            fat=fat,
+            user_id=user_id
         )
         flash(f"✅ Added {quantity} &times; {food['name']} to {meal_type}!", "success")
     else:
@@ -519,18 +560,36 @@ def add_snack_api():
 
 
 # -------------------------------------------------------------------------
-# Step 6: Personalized Summary & Recommendations
+# Landing & Step 6: Personalized Summary & Recommendations
 # -------------------------------------------------------------------------
 @app.route("/")
+def index_view():
+    """
+    Root route:
+    If user is authenticated, redirect to /dashboard.
+    If not, show the SaaS marketing landing page.
+    """
+    if "user_id" in session:
+        return redirect(url_for("dashboard_view"))
+    return render_template("landing.html", active_page="landing")
+
+
+@app.route("/landing")
+def landing_view():
+    """SaaS marketing landing page."""
+    return render_template("landing.html", active_page="landing")
+
+
 @app.route("/summary", methods=["GET"])
 def summary_view():
     """
     Step 6: Personalized Summary & Recommendations
     Displays daily calorie/macro breakdown, logged meals, and AI suggestions.
     """
+    user_id = session.get("user_id", 1)
     selected_date = request.args.get("date", date.today().isoformat())
-    profile = database.get_profile()
-    summary = database.get_daily_summary(selected_date)
+    profile = database.get_profile(user_id=user_id)
+    summary = database.get_daily_summary(selected_date, user_id=user_id)
     suggestions = database.get_personalized_suggestions(selected_date)
 
     return render_template(
@@ -733,6 +792,478 @@ def api_update_order_status(order_id):
         database.update_order_status(order_id, new_status)
         return jsonify({"success": True, "status": new_status})
     return jsonify({"success": False, "error": "Invalid status."}), 400
+
+
+# -------------------------------------------------------------------------
+# Authentication Routes (Register, Login, Logout, Forgot Password)
+# -------------------------------------------------------------------------
+@app.route("/register", methods=["GET", "POST"])
+def register_view():
+    """User registration page."""
+    if "user_id" in session:
+        return redirect(url_for("dashboard_view"))
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        diet_preference = request.form.get("diet_preference", "all")
+
+        if not name or not email or not password:
+            flash("All fields are required.", "error")
+            return render_template("auth/register.html", active_page="register")
+
+        if len(password) < 6:
+            flash("Password must be at least 6 characters long.", "error")
+            return render_template("auth/register.html", active_page="register")
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return render_template("auth/register.html", active_page="register")
+
+        user_id, error = database.register_user(name, email, password, diet_preference)
+        if error:
+            flash(error, "error")
+            return render_template("auth/register.html", active_page="register")
+
+        session["user_id"] = user_id
+        session["user_name"] = name
+        session["user_email"] = email
+        flash(f"🎉 Welcome to NutriTrack, {name}! Your account has been created.", "success")
+        return redirect(url_for("dashboard_view"))
+
+    return render_template("auth/register.html", active_page="register")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login_view():
+    """User login page."""
+    if "user_id" in session:
+        return redirect(url_for("dashboard_view"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        user = database.authenticate_user(email, password)
+        if user:
+            session["user_id"] = user["id"]
+            session["user_name"] = user["name"]
+            session["user_email"] = user["email"]
+            flash(f"Welcome back, {user['name']}! 👋", "success")
+            next_url = request.args.get("next")
+            return redirect(next_url or url_for("dashboard_view"))
+        else:
+            flash("Invalid email or password. Please try again or use Demo Login.", "error")
+
+    return render_template("auth/login.html", active_page="login")
+
+
+@app.route("/demo-login")
+def demo_login_view():
+    """1-Click quick login as Alex Smith (Demo User)."""
+    user = database.get_user_by_id(1)
+    if not user:
+        user = database.get_user_by_email("alex@example.com")
+
+    if user:
+        session["user_id"] = user["id"]
+        session["user_name"] = user["name"]
+        session["user_email"] = user["email"]
+        flash("👋 Logged in as Demo User (Alex Smith)!", "success")
+    else:
+        session["user_id"] = 1
+        session["user_name"] = "Alex Smith"
+        session["user_email"] = "alex@example.com"
+        flash("👋 Logged in as Demo User (Alex Smith)!", "success")
+
+    return redirect(url_for("dashboard_view"))
+
+
+@app.route("/logout")
+def logout_view():
+    """Logs the user out and clears the session."""
+    session.clear()
+    flash("You have been logged out. Stay healthy!", "info")
+    return redirect(url_for("landing_view"))
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password_view():
+    """Forgot password interface."""
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not email or not new_password:
+            flash("Please fill in all fields.", "error")
+            return render_template("auth/forgot_password.html", active_page="forgot_password")
+
+        if len(new_password) < 6:
+            flash("Password must be at least 6 characters long.", "error")
+            return render_template("auth/forgot_password.html", active_page="forgot_password")
+
+        if new_password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return render_template("auth/forgot_password.html", active_page="forgot_password")
+
+        success = database.reset_user_password(email, new_password)
+        if success:
+            flash("Your password has been reset successfully! Please log in.", "success")
+            return redirect(url_for("login_view"))
+        else:
+            flash("No account was found with that email address.", "error")
+
+    return render_template("auth/forgot_password.html", active_page="forgot_password")
+
+
+# -------------------------------------------------------------------------
+# Main Dashboard (Section 5)
+# -------------------------------------------------------------------------
+@app.route("/dashboard")
+def dashboard_view():
+    """
+    Main SaaS Dashboard:
+    - Calories consumed vs target
+    - Protein, carbs, and fat breakdown
+    - Daily progress bars
+    - Today's meals timeline
+    - Weekly nutrition Chart.js
+    - Quick actions and smart recommendations
+    """
+    user_id = session.get("user_id", 1)
+    selected_date = request.args.get("date", date.today().isoformat())
+    profile = database.get_profile(user_id=user_id)
+    summary = database.get_daily_summary(selected_date, user_id=user_id)
+    today_logs = database.get_logs_for_date(selected_date, user_id=user_id)
+    recent_history = database.get_meal_history(user_id=user_id)[:6]
+    suggestions = database.get_personalized_suggestions(selected_date)
+    analytics = database.get_nutrition_analytics(user_id=user_id, days=7)
+
+    return render_template(
+        "dashboard.html",
+        profile=profile,
+        summary=summary,
+        today_logs=today_logs,
+        recent_history=recent_history,
+        suggestions=suggestions,
+        analytics=analytics,
+        selected_date=selected_date,
+        active_page="dashboard"
+    )
+
+
+# -------------------------------------------------------------------------
+# Ingredient-Based Meal Suggestions (Section 7)
+# -------------------------------------------------------------------------
+@app.route("/meal-ideas")
+@app.route("/suggestions")
+def meal_ideas_view():
+    """Ingredient-based recipe generator page."""
+    user_id = session.get("user_id", 1)
+    profile = database.get_profile(user_id=user_id)
+    recipes = database.get_recipes()
+    saved = database.get_saved_recipes_for_user(user_id)
+    saved_ids = [r["id"] for r in saved]
+
+    return render_template(
+        "meal_ideas.html",
+        recipes=recipes,
+        saved_ids=saved_ids,
+        profile=profile,
+        active_page="meal_ideas"
+    )
+
+
+@app.route("/api/suggest-meals", methods=["POST"])
+def api_suggest_meals():
+    """
+    API endpoint that matches user's available ingredients with the recipe database.
+    """
+    data = request.get_json(silent=True) or request.form
+    ingredients = data.get("ingredients", [])
+    if isinstance(ingredients, str):
+        ingredients = [i.strip() for i in ingredients.split(",") if i.strip()]
+
+    diet_type = data.get("diet_type", "all")
+    category = data.get("category", "All")
+    max_time = data.get("max_time", 60)
+
+    ranked_recipes = database.match_recipes_by_ingredients(
+        user_ingredients=ingredients,
+        diet_type=diet_type,
+        category=category,
+        max_time=max_time
+    )
+
+    user_id = session.get("user_id", 1)
+    saved = database.get_saved_recipes_for_user(user_id)
+    saved_ids = [r["id"] for r in saved]
+    for r in ranked_recipes:
+        r["is_saved"] = r["id"] in saved_ids
+
+    return jsonify({"success": True, "recipes": ranked_recipes})
+
+
+@app.route("/api/save-recipe", methods=["POST"])
+def api_save_recipe():
+    """Toggles saving a recipe for the current user."""
+    user_id = session.get("user_id", 1)
+    data = request.get_json(silent=True) or request.form
+    recipe_id = data.get("recipe_id")
+
+    if not recipe_id:
+        return jsonify({"success": False, "error": "Missing recipe_id"}), 400
+
+    recipe_id = int(recipe_id)
+    if database.is_recipe_saved(user_id, recipe_id):
+        database.unsave_recipe_for_user(user_id, recipe_id)
+        saved = False
+        msg = "Recipe removed from your saved collection."
+    else:
+        database.save_recipe_for_user(user_id, recipe_id)
+        saved = True
+        msg = "⭐ Recipe saved to your collection!"
+
+    return jsonify({"success": True, "saved": saved, "message": msg})
+
+
+@app.route("/saved-recipes")
+def saved_recipes_view():
+    """Displays user's saved recipes."""
+    user_id = session.get("user_id", 1)
+    saved = database.get_saved_recipes_for_user(user_id)
+    return render_template(
+        "saved_recipes.html",
+        recipes=saved,
+        active_page="meal_ideas"
+    )
+
+
+# -------------------------------------------------------------------------
+# Meal Details & Meal History (Section 8)
+# -------------------------------------------------------------------------
+@app.route("/meal/<int:log_id>")
+def meal_details_view(log_id):
+    """Detailed view of a specific logged meal."""
+    user_id = session.get("user_id", 1)
+    meal = database.get_meal_details_full(log_id, user_id=user_id)
+    if not meal:
+        meal = database.get_meal_details_full(log_id)
+    if not meal:
+        flash("Meal log not found.", "error")
+        return redirect(url_for("history_view"))
+
+    return render_template(
+        "meal_details.html",
+        meal=meal,
+        active_page="history"
+    )
+
+
+@app.route("/history")
+def history_view():
+    """
+    Meal History page with:
+    - Search by food name
+    - Filter by date range
+    - Filter by meal category
+    - Itemized cards, edit & delete options
+    """
+    user_id = session.get("user_id", 1)
+    search_q = request.args.get("q", "").strip()
+    start_d = request.args.get("start_date", "")
+    end_d = request.args.get("end_date", "")
+    meal_type = request.args.get("meal_type", "All")
+
+    meals = database.get_meal_history(
+        user_id=user_id,
+        search_query=search_q if search_q else None,
+        start_date=start_d if start_d else None,
+        end_date=end_d if end_d else None,
+        meal_type=meal_type if meal_type != "All" else None
+    )
+
+    total_cals = round(sum(m["calories"] for m in meals), 1)
+    total_pro = round(sum(m["protein"] for m in meals), 1)
+    total_carb = round(sum(m["carbs"] for m in meals), 1)
+    total_fat = round(sum(m["fat"] for m in meals), 1)
+
+    return render_template(
+        "history.html",
+        meals=meals,
+        total_cals=total_cals,
+        total_pro=total_pro,
+        total_carb=total_carb,
+        total_fat=total_fat,
+        search_query=search_q,
+        start_date=start_d,
+        end_date=end_d,
+        meal_type=meal_type,
+        active_page="history"
+    )
+
+
+@app.route("/api/delete-meal/<int:log_id>", methods=["POST"])
+def api_delete_meal(log_id):
+    """Deletes a meal log item."""
+    user_id = session.get("user_id", 1)
+    database.delete_log(log_id, user_id=user_id)
+    if request.is_json:
+        return jsonify({"success": True, "message": "Meal log deleted."})
+    flash("🗑️ Meal entry removed.", "info")
+    return redirect(url_for("history_view"))
+
+
+@app.route("/api/edit-meal/<int:log_id>", methods=["POST"])
+def api_edit_meal(log_id):
+    """Edits a saved meal log."""
+    user_id = session.get("user_id", 1)
+    data = request.get_json(silent=True) or request.form
+    food_name = data.get("food_name")
+    quantity = float(data.get("quantity", 1.0))
+    calories = float(data.get("calories", 0.0))
+    protein = float(data.get("protein", 0.0))
+    carbs = float(data.get("carbs", 0.0))
+    fat = float(data.get("fat", 0.0))
+
+    database.update_meal_log_full(log_id, food_name, quantity, calories, protein, carbs, fat, user_id=user_id)
+    if request.is_json:
+        return jsonify({"success": True, "message": "Meal updated successfully."})
+    flash("💾 Meal updated successfully.", "success")
+    return redirect(url_for("history_view"))
+
+
+# -------------------------------------------------------------------------
+# Nutrition Analytics (Section 9)
+# -------------------------------------------------------------------------
+@app.route("/analytics")
+def analytics_view():
+    """Nutrition Analytics dashboard powered by Chart.js."""
+    user_id = session.get("user_id", 1)
+    days = int(request.args.get("days", 7))
+    analytics = database.get_nutrition_analytics(user_id=user_id, days=days)
+    profile = database.get_profile(user_id=user_id)
+
+    return render_template(
+        "analytics.html",
+        analytics=analytics,
+        profile=profile,
+        days=days,
+        active_page="analytics"
+    )
+
+
+@app.route("/api/analytics-data")
+def api_analytics_data():
+    """Returns analytics data as JSON for dynamic Chart.js rendering."""
+    user_id = session.get("user_id", 1)
+    days = int(request.args.get("days", 7))
+    analytics = database.get_nutrition_analytics(user_id=user_id, days=days)
+    return jsonify(analytics)
+
+
+# -------------------------------------------------------------------------
+# Settings, Preferences & Export (Section 12)
+# -------------------------------------------------------------------------
+@app.route("/settings", methods=["GET", "POST"])
+def settings_view():
+    """User Settings & Preferences page."""
+    user_id = session.get("user_id", 1)
+    user = database.get_user_by_id(user_id)
+    pref = database.get_user_preferences(user_id)
+    profile = database.get_profile(user_id=user_id)
+
+    if request.method == "POST":
+        unit_system = request.form.get("unit_system", "metric")
+        dark_mode = 1 if request.form.get("dark_mode") else 0
+        email_reminders = 1 if request.form.get("email_reminders") else 0
+
+        database.update_user_preferences(
+            user_id=user_id,
+            dark_mode=dark_mode,
+            unit_system=unit_system,
+            email_reminders=email_reminders
+        )
+
+        # Handle password change if provided
+        new_password = request.form.get("new_password", "")
+        if new_password:
+            if len(new_password) < 6:
+                flash("New password must be at least 6 characters.", "error")
+            else:
+                database.reset_user_password(user["email"] if user else "alex@example.com", new_password)
+                flash("🔒 Password updated successfully!", "success")
+
+        flash("⚙️ Preferences saved successfully!", "success")
+        return redirect(url_for("settings_view"))
+
+    return render_template(
+        "settings.html",
+        user=user,
+        pref=pref,
+        profile=profile,
+        active_page="settings"
+    )
+
+
+@app.route("/api/toggle-dark-mode", methods=["POST"])
+def api_toggle_dark_mode():
+    """Quick API toggle for Dark Mode."""
+    user_id = session.get("user_id", 1)
+    data = request.get_json(silent=True) or request.form
+    dark_mode = int(data.get("dark_mode", 0))
+    database.update_user_preferences(user_id=user_id, dark_mode=dark_mode)
+    return jsonify({"success": True, "dark_mode": dark_mode})
+
+
+@app.route("/export-diary")
+def export_diary():
+    """Exports user's meal history as a CSV or JSON file."""
+    user_id = session.get("user_id", 1)
+    fmt = request.args.get("format", "csv").lower()
+    meals = database.get_meal_history(user_id=user_id)
+
+    if fmt == "json":
+        return Response(
+            json.dumps(meals, indent=2, default=str),
+            mimetype="application/json",
+            headers={"Content-Disposition": "attachment;filename=nutritrack_diary.json"}
+        )
+
+    # CSV Format
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Meal Type", "Food Name", "Quantity", "Unit", "Calories (kcal)", "Protein (g)", "Carbs (g)", "Fat (g)"])
+    for m in meals:
+        writer.writerow([
+            m["meal_date"], m["meal_type"], m["food_name"],
+            m["quantity"], m["unit"], m["calories"],
+            m["protein"], m["carbs"], m["fat"]
+        ])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=nutritrack_diary.csv"}
+    )
+
+
+# -------------------------------------------------------------------------
+# About NutriTrack (Section 12)
+# -------------------------------------------------------------------------
+@app.route("/about")
+def about_view():
+    """About NutriTrack page."""
+    return render_template("about.html", active_page="about")
+
+
+@app.route("/analyze")
+def analyze_redirect():
+    """Alias for /upload."""
+    return redirect(url_for("upload_view"))
 
 
 # -------------------------------------------------------------------------

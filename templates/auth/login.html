@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Log In - NutriTrack{% endblock %}
+
+{% block content %}
+<div style="max-width: 480px; margin: 2rem auto;">
+    <div class="card" style="padding: 2.25rem 2rem; border-top: 4px solid var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.08);">
+        <div style="text-align: center; margin-bottom: 1.75rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.25rem;">🥗</div>
+            <h1 style="font-size: 1.65rem; color: var(--primary-dark); font-weight: 800;">Log In to NutriTrack</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                Eat Smart. Track Better. Live Healthy.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('login_view') }}">
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label for="email" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem; display: block;">
+                    Email Address <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com" value="{{ request.form.get('email', '') }}" required autofocus style="padding: 0.7rem 0.85rem;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                    <label for="password" style="font-weight: 600; font-size: 0.9rem; margin: 0;">
+                        Password <span style="color: #ef4444;">*</span>
+                    </label>
+                    <a href="{{ url_for('forgot_password_view') }}" style="font-size: 0.82rem; color: var(--primary); text-decoration: none; font-weight: 600;">
+                        Forgot Password?
+                    </a>
+                </div>
+                <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required style="padding: 0.7rem 0.85rem;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; font-size: 1rem; font-weight: 700; border-radius: 8px; margin-top: 0.5rem; box-shadow: 0 4px 10px rgba(22, 101, 52, 0.25);">
+                Log In
+            </button>
+        </form>
+
+        <div style="margin: 1.5rem 0; display: flex; align-items: center; text-align: center;">
+            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+            <span style="padding: 0 0.75rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 600;">OR EVALUATE INSTANTLY</span>
+            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        </div>
+
+        <a href="{{ url_for('demo_login_view') }}" class="btn btn-secondary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none;">
+            ⚡ Quick Demo Login (Alex Smith)
+        </a>
+
+        <div style="text-align: center; margin-top: 1.75rem; font-size: 0.9rem; color: var(--text-muted);">
+            Don't have an account? 
+            <a href="{{ url_for('register_view') }}" style="color: var(--primary); font-weight: 700; text-decoration: none;">
+                Create Free Account
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

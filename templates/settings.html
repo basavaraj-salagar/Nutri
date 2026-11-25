@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Settings & Preferences - NutriTrack{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 2rem;">
+    <h1 style="color: var(--primary-dark); font-size: 1.85rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem;">
+        <span>⚙️</span> Settings & Preferences
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+        Manage your display mode, unit preferences, password, and export your personal nutrition diary.
+    </p>
+</div>
+
+<div class="grid-2" style="gap: 2rem;">
+    <!-- Left Column: App Preferences & Security -->
+    <div>
+        <!-- Preferences Form -->
+        <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="card-header" style="margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+                <h2 class="card-title" style="font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="sliders" style="width: 18px; height: 18px; color: var(--primary);"></i> Display & System Settings
+                </h2>
+            </div>
+
+            <form method="POST" action="{{ url_for('settings_view') }}">
+                <!-- Dark Mode -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <strong style="color: var(--text-dark); font-size: 0.95rem;">Dark Mode Theme</strong>
+                        <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Switch between light forest green and midnight dark theme.</p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 48px; height: 26px;">
+                        <input type="checkbox" name="dark_mode" value="1" {% if pref.dark_mode %}checked{% endif %} style="opacity: 0; width: 0; height: 0;" id="settings_dark_mode_checkbox" onchange="toggleDarkModeFromSettings(this.checked)">
+                        <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: {% if pref.dark_mode %}var(--primary){% else %}#cbd5e1{% endif %}; transition: .3s; border-radius: 26px;" id="dark_mode_slider">
+                            <span style="position: absolute; content: ''; height: 20px; width: 20px; left: {% if pref.dark_mode %}25px{% else %}3px{% endif %}; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" id="dark_mode_knob"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Unit System -->
+                <div style="padding: 1rem 0; border-bottom: 1px solid var(--border);">
+                    <label for="unit_system" style="font-weight: 600; font-size: 0.95rem; color: var(--text-dark); display: block; margin-bottom: 0.35rem;">
+                        Measurement Unit System
+                    </label>
+                    <select id="unit_system" name="unit_system" class="form-control">
+                        <option value="metric" {% if pref.unit_system == 'metric' %}selected{% endif %}>Metric System (kg, cm, kcal)</option>
+                        <option value="imperial" {% if pref.unit_system == 'imperial' %}selected{% endif %}>Imperial System (lbs, inches, kcal)</option>
+                    </select>
+                </div>
+
+                <!-- Email Reminders -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <strong style="color: var(--text-dark); font-size: 0.95rem;">Meal Reminders & Tips</strong>
+                        <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Receive daily notifications to log breakfast, lunch, and dinner.</p>
+                    </div>
+                    <input type="checkbox" name="email_reminders" value="1" {% if pref.email_reminders %}checked{% endif %} style="transform: scale(1.3); cursor: pointer;">
+                </div>
+
+                <!-- Password Change Section -->
+                <div style="padding-top: 1.25rem;">
+                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.75rem;">
+                        🔒 Update Password (Optional)
+                    </h3>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="new_password" style="font-size: 0.85rem; color: var(--text-muted);">New Password (leave blank to keep current)</label>
+                        <input type="password" id="new_password" name="new_password" class="form-control" placeholder="Min 6 characters">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.25rem;">
+                    💾 Save Settings
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Account Info & Data Export -->
+    <div>
+        <!-- Account Info Card -->
+        <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="card-header" style="margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+                <h2 class="card-title" style="font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="user-check" style="width: 18px; height: 18px; color: var(--primary);"></i> Account Profile
+                </h2>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+                <div style="width: 54px; height: 54px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 800; font-size: 1.4rem; display: flex; align-items: center; justify-content: center;">
+                    {{ (user.name[0] if user and user.name else 'U')|upper }}
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-dark);">{{ user.name if user else 'Demo User' }}</h3>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem;">{{ user.email if user else 'user@nutritrack.app' }}</p>
+                    <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-size: 0.75rem; margin-top: 0.35rem; display: inline-block;">
+                        Active Member &bull; Free Plan
+                    </span>
+                </div>
+            </div>
+
+            <a href="{{ url_for('profile_view') }}" class="btn btn-outline" style="width: 100%; text-align: center; display: block;">
+                ✏️ Edit Fitness Goals & Profile
+            </a>
+        </div>
+
+        <!-- Data Export Card -->
+        <div class="card" style="padding: 1.5rem;">
+            <div class="card-header" style="margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+                <h2 class="card-title" style="font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="database" style="width: 18px; height: 18px; color: var(--primary);"></i> Export Nutrition Diary
+                </h2>
+            </div>
+            
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; line-height: 1.4;">
+                Download your complete meal logs, calories, and macronutrient statistics for external analysis or sharing with your dietitian.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <a href="{{ url_for('export_diary', format='csv') }}" class="btn btn-outline" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                    <span style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+                        📄 Download as CSV
+                    </span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Spreadsheet (.csv)</span>
+                </a>
+
+                <a href="{{ url_for('export_diary', format='json') }}" class="btn btn-outline" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                    <span style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+                        💾 Download as JSON
+                    </span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Raw Data (.json)</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDarkModeFromSettings(checked) {
+    const slider = document.getElementById('dark_mode_slider');
+    const knob = document.getElementById('dark_mode_knob');
+    if (checked) {
+        slider.style.backgroundColor = 'var(--primary)';
+        knob.style.left = '25px';
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        slider.style.backgroundColor = '#cbd5e1';
+        knob.style.left = '3px';
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+    }
+
+    fetch('/api/toggle-dark-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dark_mode: checked ? 1 : 0 })
+    }).catch(e => console.error(e));
+}
+</script>
+{% endblock %}

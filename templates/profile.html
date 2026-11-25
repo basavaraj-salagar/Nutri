@@ -76,6 +76,11 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label for="allergies">Food Allergies & Restrictions (optional)</label>
+                <input type="text" id="allergies" name="allergies" class="form-control" value="{{ profile.allergies or '' }}" placeholder="e.g. Peanuts, Gluten, Dairy, Shellfish">
+            </div>
+
             <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
                 💾 Save Profile & Recalculate Targets
             </button>

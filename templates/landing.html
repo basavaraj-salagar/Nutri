@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}NutriTrack – Eat Smart. Track Better. Live Healthy.{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="card" style="margin-bottom: 2rem; padding: 3rem 2rem; background: linear-gradient(135deg, #14532d 0%, #166534 50%, #15803d 100%); color: #ffffff; border: none; border-radius: 16px; box-shadow: 0 10px 25px rgba(20, 83, 45, 0.25); text-align: center;">
+    <span class="badge" style="background: rgba(255, 255, 255, 0.2); color: #ffffff; padding: 0.4rem 1rem; border-radius: 20px; font-weight: 700; font-size: 0.85rem; display: inline-block; margin-bottom: 1rem; backdrop-filter: blur(4px);">
+        ✨ AI-Powered Nutrition & Meal Intelligence
+    </span>
+    <h1 style="font-size: 2.75rem; font-weight: 800; line-height: 1.2; margin-bottom: 1rem; color: #ffffff;">
+        Eat Smart. Track Better. Live Healthy.
+    </h1>
+    <p style="font-size: 1.15rem; max-width: 720px; margin: 0 auto 2rem auto; color: #dcfce7; line-height: 1.6;">
+        Upload meal photos to recognize foods with artificial intelligence, calculate precise macronutrients, and turn your available kitchen ingredients into chef-crafted healthy recipes.
+    </p>
+
+    <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <a href="{{ url_for('register_view') }}" class="btn" style="background: #22c55e; color: #ffffff; font-weight: 700; font-size: 1.05rem; padding: 0.85rem 2rem; border-radius: 10px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4); text-decoration: none;">
+            🚀 Get Started Free
+        </a>
+        <a href="{{ url_for('demo_login_view') }}" class="btn" style="background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.4); font-weight: 700; font-size: 1.05rem; padding: 0.85rem 1.75rem; border-radius: 10px; backdrop-filter: blur(4px); text-decoration: none;">
+            ⚡ 1-Click Demo Account
+        </a>
+        <a href="{{ url_for('upload_view') }}" class="btn" style="background: #ffffff; color: var(--primary); font-weight: 700; font-size: 1.05rem; padding: 0.85rem 1.75rem; border-radius: 10px; text-decoration: none;">
+            📸 Try Meal Photo AI
+        </a>
+    </div>
+</div>
+
+<!-- 4 Key Highlights Grid -->
+<div class="grid-4" style="margin-bottom: 2.5rem;">
+    <div class="card" style="text-align: center; padding: 1.75rem 1.25rem;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.75rem;">📸</div>
+        <h3 style="font-size: 1.1rem; color: var(--primary-dark); font-weight: 700; margin-bottom: 0.5rem;">AI Food Vision</h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+            Detects multiple dishes and raw ingredients from a single photo with serving sizes and calories.
+        </p>
+    </div>
+
+    <div class="card" style="text-align: center; padding: 1.75rem 1.25rem;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.75rem;">🥘</div>
+        <h3 style="font-size: 1.1rem; color: var(--primary-dark); font-weight: 700; margin-bottom: 0.5rem;">Ingredient Recipes</h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+            Input what is inside your fridge; our recipe engine finds healthy meals matching what you already have.
+        </p>
+    </div>
+
+    <div class="card" style="text-align: center; padding: 1.75rem 1.25rem;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.75rem;">📊</div>
+        <h3 style="font-size: 1.1rem; color: var(--primary-dark); font-weight: 700; margin-bottom: 0.5rem;">Macro Analytics</h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+            Interactive Chart.js tracking for Calories, Protein, Carbohydrates, and Fats vs your Mifflin-St Jeor targets.
+        </p>
+    </div>
+
+    <div class="card" style="text-align: center; padding: 1.75rem 1.25rem;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.75rem;">🥗</div>
+        <h3 style="font-size: 1.1rem; color: var(--primary-dark); font-weight: 700; margin-bottom: 0.5rem;">77+ Food Database</h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+            Comprehensive nutritional database featuring traditional Indian foods, staples, fruits, and snacks.
+        </p>
+    </div>
+</div>
+
+<!-- 6 Methodology Steps Banner -->
+<div class="card" style="margin-bottom: 2.5rem; padding: 2rem;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <span class="badge" style="background: var(--primary-light); color: var(--primary-dark); font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 20px;">
+            Scientific Architecture
+        </span>
+        <h2 style="color: var(--primary-dark); font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem;">
+            The 6-Step NutriTrack Methodology
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 600px; margin: 0.25rem auto 0 auto;">
+            Engineered sequentially according to the official project methodology specification.
+        </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem;">
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1rem; text-align: center;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">1</div>
+            <strong style="color: var(--primary-dark); font-size: 0.92rem; display: block;">USER PROFILE</strong>
+            <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Age, height, weight & personalized BMR targets</span>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1rem; text-align: center;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #22c55e; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">2</div>
+            <strong style="color: #15803d; font-size: 0.92rem; display: block;">UPLOAD MEAL</strong>
+            <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Upload photo, snap camera, or enter ingredients</span>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1rem; text-align: center;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">3</div>
+            <strong style="color: var(--primary-dark); font-size: 0.92rem; display: block;">AI RECOGNITION</strong>
+            <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Identify food items & estimate portion weights</span>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1rem; text-align: center;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #22c55e; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">4</div>
+            <strong style="color: #15803d; font-size: 0.92rem; display: block;">NUTRITION DB</strong>
+            <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Map to standard USDA & Indian nutritional values</span>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1rem; text-align: center;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">5</div>
+            <strong style="color: var(--primary-dark); font-size: 0.92rem; display: block;">USER REVIEWS</strong>
+            <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Review, adjust portions & save meal to diary</span>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1rem; text-align: center;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #22c55e; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">6</div>
+            <strong style="color: #15803d; font-size: 0.92rem; display: block;">DAILY SUMMARY</strong>
+            <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Analytics, deficit/surplus rings & recommendations</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick CTA Banner -->
+<div class="card" style="text-align: center; padding: 2.5rem 1.5rem; background: var(--primary-light); border: 2px solid var(--primary); border-radius: 14px;">
+    <h2 style="font-size: 1.75rem; color: var(--primary-dark); font-weight: 800; margin-bottom: 0.5rem;">
+        Ready to take control of your nutrition?
+    </h2>
+    <p style="color: var(--text-dark); font-size: 1rem; margin-bottom: 1.5rem;">
+        Join NutriTrack today or explore the live dashboard with our instant demo.
+    </p>
+    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('register_view') }}" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem; font-weight: 700;">
+            Create Free Account
+        </a>
+        <a href="{{ url_for('demo_login_view') }}" class="btn btn-secondary" style="padding: 0.75rem 1.75rem; font-size: 1rem; font-weight: 700;">
+            Explore Live Demo
+        </a>
+    </div>
+</div>
+{% endblock %}
